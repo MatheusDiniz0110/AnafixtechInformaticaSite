@@ -1,0 +1,239 @@
+﻿@{
+    ViewData["Title"] = "Página Inicial";
+}
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnaFixTech Informática</title>
+    <link rel="stylesheet" href="~/css/style.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <style>
+            .arredondada {
+                border-radius: 20px; /* Altere o valor para mais ou menos arredondado */
+                width: 300px;
+                height: 300px;
+                object-fit: cover;
+            }
+    </style>
+</head>
+<body>
+    <section class="hero">
+        <div class="hero-content">
+            <span class="tag">
+                ● Assistência Técnica Especializada
+            </span>
+            <h1>
+                Soluções em<br>
+                <strong>Tecnologia</strong>
+            </h1>
+            <p>
+                Especialistas em manutenção de computadores,
+                recuperação de dados e suporte técnico.
+                Transformamos problemas em soluções com rapidez e qualidade.
+            </p>
+            <div class="buttons">
+                <button>
+                    Solicitar Serviço →
+                </button>
+                <button class="light">
+                    Ver Serviços
+                </button>
+            </div>
+            <div class="features">
+                <div>
+                    <i class="fa-solid fa-shield"></i>
+                    <h4>Garantia</h4>
+                    <p>90 dias</p>
+                </div>
+                <div>
+                    <i class="fa-regular fa-clock"></i>
+                    <h4>Rápido</h4>
+                    <p>24-96h</p>
+                </div>
+                <div>
+                    <i class="fa-solid fa-award"></i>
+                    <h4>Qualidade</h4>
+                    <p>Certificados</p>
+                </div>
+            </div>
+        </div>
+        <div class="brand-card">
+            <img src="logo.ico" alt="Logo AnaFixTech" class="arredondada">
+
+        </div>
+    </section>
+
+    <section class="stats">
+        <div>
+            <h2>@Model.ServicesPerformed</h2>
+            <p>Serviços Realizados</p>
+            <span>
+                Serviço realizado com credibilidade e qualidade
+            </span>
+        </div>
+        <div>
+            <h2>@Model.SatisfiedCustomers</h2>
+            <p>Clientes Satisfeitos</p>
+            <span>
+                Maioria dos clientes ficaram satisfeitos
+            </span>
+        </div>
+        <div>
+            <h2>@Model.DeliveryTime.ToString()h</h2>
+            <p>Prazo Médio de Entrega</p>
+            <span>
+                Entregas realizadas com excelência
+            </span>
+        </div>
+        <div>
+            <h2>@Model.SatisfactionIndex.ToString()%</h2>
+            <p>Índice de Satisfação</p>
+            <span>
+                Maioria dos clientes satisfeitos
+            </span>
+        </div>
+    </section>
+
+    <section class="services">
+        <div class="title">
+            <span>NOSSOS SERVIÇOS</span>
+            <h1>
+                O que fazemos de melhor
+            </h1>
+            <p>
+                Oferecemos uma gama completa de serviços técnicos
+                para manter seus equipamentos funcionando perfeitamente.
+            </p>
+        </div>
+        <div class="cards">
+            <div class="card blue">
+                <i class="fa-solid fa-desktop"></i>
+                <h3>Manutenção de PC</h3>
+                <p>
+                    Formatação, limpeza, upgrades e otimização de desempenho.
+                </p>
+            </div>
+            <div class="card green">
+                <i class="fa-solid fa-hard-drive"></i>
+                <h3>Recuperação de Dados</h3>
+                <p>
+                    Recuperamos arquivos perdidos de HDs, SSDs e pendrives.
+                </p>
+            </div>
+            <div class="card cyan">
+                <i class="fa-solid fa-wifi"></i>
+                <h3>Redes & Internet</h3>
+                <p>
+                    Configuração de redes, roteadores e resolução de problemas.
+                </p>
+            </div>
+            <div class="card purple">
+                <i class="fa-solid fa-database"></i>
+                <h3>Backup & Segurança</h3>
+                <p>
+                    Soluções de backup e proteção contra vírus.
+                </p>
+            </div>
+            <div class="card orange">
+                <i class="fa-solid fa-gear"></i>
+                <h3>Instalação de Software</h3>
+                <p>
+                    Instalação e configuração de sistemas.
+                </p>
+            </div>
+            <div class="card pink">
+                <i class="fa-solid fa-mobile"></i>
+                <h3>Dispositivos Móveis</h3>
+                <p>
+                    Suporte técnico para tablets e smartphones.
+                </p>
+            </div>
+        </div>
+        <button class="more">
+            Ver todos os serviços →
+        </button>
+    </section>
+    <section class="contact">
+        <h1>
+            Precisa de ajuda?
+        </h1>
+        <p>
+            Entre em contato conosco e resolva seu problema tecnológico hoje mesmo.
+        </p>
+        <div>
+            <button href="https://localhost:7160/ServiceRequest">
+                Abrir Solicitação →
+            </button>
+            <button href="https://localhost:7160/Home/Forum">
+                💬 Tirar Dúvidas
+            </button>
+        </div>
+        <a href="https://wa.me/5562998877833">
+            ☎ (62) 998877833
+        </a>
+
+        <a href="mailto:matheus.diniz.t@outlook.com">
+            ✉ matheus.diniz.t@outlook.com
+        </a>
+
+    </section>
+    @*     ✉ matheus.diniz.t@outlook.com
+    ☎ (62) 998877833
+        <section class="reviews">
+        <span>
+            avaliações
+        </span>
+        <h1>
+            o que nossos clientes dizem
+        </h1>
+        <div class="stars">
+            ★★★★★
+        </div>
+        <div class="review-box">
+            <div>
+                ★★★★★
+                <p>
+                    "excelente profissional, super educado,
+                    gostei muito do trabalho."
+                </p>
+                <b>
+                    mayara silva
+                </b>
+            </div>
+        </div>
+        <button>
+            💬 deixar avaliação
+        </button>
+    </section> *@
+    <section class="social">
+        <h2>
+            Siga-nos nas redes sociais
+        </h2>
+        <p>
+            Fique por dentro das novidades e dicas de tecnologia
+        </p>
+        <div>
+            <a href="https://www.instagram.com/anafixtech_informatica15/" target="_blank" rel="noopener noreferrer">
+                <button type="button">
+                    Instagram
+                </button>
+            </a>
+            @* <button>
+                Facebook
+            </button>
+            <button>
+                Twitter
+            </button>
+            <button>
+                YouTube
+            </button>
+            <button>
+                LinkedIn
+            </button> *@
+        </div>
+    </section>
+</body>
+</html>
