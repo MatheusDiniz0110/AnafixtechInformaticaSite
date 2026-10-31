@@ -1,31 +1,181 @@
-html {
-  font-size: 14px;
+:root {
+    --bg-base: #05070f;
+    --bg-elevado: #0b0f1a;
+    --bg-input: #10141f;
+    --borda: #1f2937;
+    --texto-principal: #e5e7eb;
+    --texto-suave: #94a3b8;
+    --texto-fraco: #64748b;
+    --azul: #2563eb;
+    --azul-claro: #60a5fa;
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+html, body {
+    background-color: var(--bg-base);
+    color: var(--texto-principal);
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+a {
+    color: var(--azul-claro);
 }
 
-html {
-  position: relative;
-  min-height: 100%;
+    a:hover {
+        color: #93c5fd;
+    }
+
+h1, h2, h3, h4, h5, h6 {
+    color: #fff;
 }
 
-body {
-  margin-bottom: 60px;
+.text-muted {
+    color: var(--texto-fraco) !important;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+/* ---------- Navbar ---------- */
+.navbar {
+    background-color: var(--bg-elevado) !important;
+    border-bottom: 1px solid var(--borda);
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+.navbar-brand {
+    color: #fff !important;
+    font-weight: 700;
+}
+
+.navbar .nav-link {
+    color: var(--texto-suave) !important;
+    transition: color .15s ease;
+}
+
+    .navbar .nav-link:hover,
+    .navbar .nav-link.active {
+        color: #fff !important;
+    }
+
+.navbar-toggler {
+    border-color: var(--borda);
+}
+
+/* ---------- Formulários (Login, Register, Solicitação) ---------- */
+.form-control,
+.form-select {
+    background-color: var(--bg-input);
+    border: 1px solid var(--borda);
+    color: var(--texto-principal);
+}
+
+    .form-control:focus,
+    .form-select:focus {
+        background-color: var(--bg-input);
+        border-color: var(--azul);
+        color: #fff;
+        box-shadow: 0 0 0 .2rem rgba(37, 99, 235, .25);
+    }
+
+    .form-control::placeholder {
+        color: var(--texto-fraco);
+    }
+
+.form-floating > label {
+    color: var(--texto-fraco);
+}
+
+.form-check-label {
+    color: var(--texto-suave);
+}
+
+/* ---------- Botões ---------- */
+.btn-primary {
+    background-color: var(--azul);
+    border-color: var(--azul);
+}
+
+    .btn-primary:hover {
+        background-color: #1d4ed8;
+        border-color: #1d4ed8;
+    }
+
+.btn-outline-secondary {
+    border-color: var(--borda);
+    color: var(--texto-suave);
+}
+
+    .btn-outline-secondary:hover {
+        background-color: var(--bg-input);
+        color: #fff;
+    }
+
+/* ---------- Cards genéricos (fora do catálogo, que já tem CSS próprio) ---------- */
+.card {
+    background-color: var(--bg-elevado);
+    border: 1px solid var(--borda);
+    color: var(--texto-principal);
+}
+
+/* ---------- Rodapé ---------- */
+.footer,
+footer {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    flex-shrink: 0;
+}
+
+    footer a {
+        color: var(--texto-suave);
+    }
+
+    /* ---------- Área de login/usuário na navbar ---------- */
+.user-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background-color: var(--bg-input);
+    border: 1px solid var(--borda);
+    color: var(--texto-suave);
+    font-size: .85rem;
+}
+
+.user-badge svg {
+    color: var(--texto-fraco);
+    flex-shrink: 0;
+}
+
+.btn-logout {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    color: var(--texto-suave);
+    font-size: .85rem;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease;
+}
+
+.btn-logout:hover {
+    background-color: var(--bg-input);
+    color: #fff;
+}
+
+.btn-login {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--azul);
+    color: #fff !important;
+    font-size: .85rem;
+    font-weight: 600;
+    padding: 8px 18px;
+    border-radius: 999px;
+    text-decoration: none;
+    transition: background-color .15s ease;
+}
+
+.btn-login:hover {
+    background-color: #1d4ed8;
+    color: #fff !important;
 }

@@ -1,0 +1,93 @@
+﻿@model List<AnafixtechInformaticaSite.Models.Service>
+@{
+    ViewData["Title"] = "Nossos Serviços";
+
+    // Gera as abas de filtro a partir das categorias que existem no banco
+    var categorias = Model.Select(s => s.Class).Distinct().OrderBy(c => c).ToList();
+
+    string BadgeClass(string categoria) => categoria switch
+    {
+        "Software" => "badge-software",
+        "Dados" => "badge-dados",
+        "Hardware" => "badge-hardware",
+        "Redes" => "badge-redes",
+        _ => "badge-outros"
+    };
+}
+<head>
+    <link rel="stylesheet" href="~/css/styleServices.css" />
+</head>
+<div class="services-page">
+    <div class="services-header">
+        <span class="services-eyebrow">CATÁLOGO</span>
+        <h1 class="services-title">Nossos Serviços</h1>
+        <p class="services-subtitle">
+            Confira todos os serviços que oferecemos. Selecione o que você precisa e faça sua solicitação.
+        </p>
+    </div>
+
+    <div class="services-tabs" id="filtro-tabs">
+        <button type="button" class="tab-btn active" data-filtro="Todos">Todos</button>
+        @foreach (var categoria in categorias)
+        {
+            <button type="button" class="tab-btn" data-filtro="@categoria">@categoria</button>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <p class="text-center text-muted mt-5">Nenhum serviço cadastrado no momento.</p>
+    }
+    else
+    {
+        <div class="services-grid" id="services-grid">
+            @foreach (var service in Model)
+            {
+                <div class="service-card" data-categoria="@service.Class">
+                    <div class="service-card-top">
+                        <div class="service-icone">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </div>
+                        <span class="badge-categoria @BadgeClass(service.Class)">@service.Class</span>
+                    </div>
+
+                    <h3 class="service-nome">@service.Title</h3>
+                    <p class="service-descricao">@service.Description</p>
+
+                    <p class="service-preco">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" x2="12" y1="1" y2="23" />
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                        R$ @service.Price.ToString()
+                    </p>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const botoes = document.querySelectorAll('#filtro-tabs .tab-btn');
+            const cards = document.querySelectorAll('#services-grid .service-card');
+
+            botoes.forEach(function (botao) {
+                botao.addEventListener('click', function () {
+                    botoes.forEach(function (b) { b.classList.remove('active'); });
+                    botao.classList.add('active');
+
+                    const filtro = botao.dataset.filtro;
+                    cards.forEach(function (card) {
+                        const mostrar = filtro === 'Todos' || card.dataset.categoria === filtro;
+                        card.style.display = mostrar ? '' : 'none';
+                    });
+                });
+            });
+        })();
+    </script>
+}

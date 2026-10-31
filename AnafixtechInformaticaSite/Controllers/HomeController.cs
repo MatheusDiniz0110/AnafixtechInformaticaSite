@@ -1,5 +1,6 @@
 using AnafixtechInformaticaSite.Data;
 using AnafixtechInformaticaSite.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 

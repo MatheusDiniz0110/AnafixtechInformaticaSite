@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SiteAssistenciaTecnica.Models
+namespace AnafixtechInformaticaSite.Models
 {
     [Table("HomePageInformation")]
     public class HomePageInformation

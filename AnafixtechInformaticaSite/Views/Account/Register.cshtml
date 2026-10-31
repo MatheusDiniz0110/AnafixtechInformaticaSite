@@ -1,0 +1,60 @@
+﻿@model AnafixtechInformaticaSite.Models.RegisterViewModel
+@{
+    ViewData["Title"] = "Criar conta";
+}
+
+<div class="row justify-content-center py-5">
+    <div class="col-md-8 col-lg-6">
+        <h1 class="h3 mb-1">Criar conta</h1>
+        <p class="text-muted mb-4">Preencha os dados abaixo para acessar a AnaFixTech Informática.</p>
+
+        <form asp-controller="Account" asp-action="Register" method="post">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Name" class="form-label">Nome completo</label>
+                    <input asp-for="Name" class="form-control" autocomplete="name" />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Username" class="form-label">Nome de usuário</label>
+                    <input asp-for="Username" class="form-control" autocomplete="username" />
+                    <span asp-validation-for="Username" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Email" class="form-label">E-mail</label>
+                    <input asp-for="Email" type="email" class="form-control" autocomplete="email" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Password" class="form-label">Senha</label>
+                    <input asp-for="Password" type="password" class="form-control" autocomplete="new-password" />
+                    <div class="form-text">Use pelo menos 8 caracteres.</div>
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                @* <div class="col-12">
+                    <label asp-for="Devices" class="form-label">Seus equipamentos</label>
+                    <input asp-for="Devices" class="form-control" placeholder="Ex.: Notebook Dell, Impressora Epson L121" />
+                    <span asp-validation-for="Devices" class="text-danger small"></span>
+                </div> *@
+
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary w-100">Criar conta</button>
+                </div>
+            </div>
+        </form>
+
+        <p class="mt-3 text-muted small">
+            Já tem conta? <a asp-controller="Account" asp-action="Login">Entrar</a>
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
