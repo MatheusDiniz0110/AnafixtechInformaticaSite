@@ -22,6 +22,8 @@ namespace AnafixtechInformaticaSite.Controllers
             return View();
         }
 
+        public IActionResult Privacy() => View();
+
         public IActionResult Sobre()
         {
             return View();

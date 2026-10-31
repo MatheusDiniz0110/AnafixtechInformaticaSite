@@ -1,0 +1,54 @@
+@*
+    Rodapé global do site. Usado em todas as páginas via _Layout.cshtml: <partial name="_Footer" />
+    Estilos: wwwroot/css/footer.css
+    Se a empresa tiver CNPJ, acrescente uma linha na barra inferior (ex.: CNPJ 00.000.000/0001-00).
+*@
+@{
+    var ano = DateTime.Now.Year;
+}
+
+<footer class="site-footer" aria-label="Rodapé do site">
+    <div class="site-footer__inner">
+
+        <div class="site-footer__brand">
+            <a class="site-footer__logo" asp-controller="Home" asp-action="Index">AnaFixTech <span>Informática</span></a>
+            <p>Assistência técnica especializada e soluções em tecnologia em Anápolis (GO). Rapidez, transparência e garantia de 90 dias.</p>
+            <ul class="site-footer__pills" aria-label="Canais de atendimento">
+                <li><a href="https://wa.me/5562998877833" target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
+                <li><a href="https://www.instagram.com/anafixtech_informatica15" target="_blank" rel="noopener noreferrer">Instagram</a></li>
+            </ul>
+        </div>
+
+        <nav class="site-footer__col" aria-label="Navegação do rodapé">
+            <h2>Navegação</h2>
+            <ul>
+                <li><a asp-controller="Home" asp-action="Index">Home</a></li>
+                <li><a asp-controller="Services" asp-action="Index">Serviços</a></li>
+                <li><a asp-controller="Home" asp-action="Sobre">Sobre</a></li>
+                <li><a asp-controller="Home" asp-action="Privacy">Política de Privacidade</a></li>
+            </ul>
+        </nav>
+
+        <address class="site-footer__col">
+            <h2>Contato</h2>
+            <ul>
+                <li><a href="https://wa.me/5562998877833" target="_blank" rel="noopener noreferrer">(62) 99887-7833</a></li>
+                <li><a href="mailto:matheus.diniz.t@outlook.com">matheus.diniz.t@outlook.com</a></li>
+                <li><span>Anápolis — Goiás</span></li>
+            </ul>
+        </address>
+    </div>
+
+    <div class="site-footer__bottom">
+        <div class="site-footer__bottom-inner">
+            <p>&copy; @ano AnaFixTech Informática. Todos os direitos reservados.</p>
+            <p>
+                <a asp-controller="Home" asp-action="Privacy">Política de Privacidade</a>
+                <span aria-hidden="true">·</span>
+                Desenvolvido por <a href="https://github.com/MatheusDiniz0110" target="_blank" rel="noopener noreferrer">Matheus Diniz Tereza</a>
+                <span aria-hidden="true">·</span>
+                <a href="#" class="site-footer__top">Voltar ao topo ↑</a>
+            </p>
+        </div>
+    </div>
+</footer>

@@ -20,13 +20,13 @@ var key = Encoding.ASCII.GetBytes(builder.Configuration["JwtSecretKey"]);
 
 builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = "JwtBearer";
-    options.DefaultChallengeScheme = "JwtBearer";
+    options.DefaultAuthenticateScheme = "Bearer";
+    options.DefaultChallengeScheme = "Bearer";
 }).AddJwtBearer(options =>
 {
     options.RequireHttpsMetadata = false;
     options.SaveToken = true;
-    //options.Events = new JwtBearerEvents { OnMessageReceived = ctx => { ctx.Token = ctx.Request.Cookies["access_token"]; return Task.CompletedTask; } };
+    options.Events = new JwtBearerEvents { OnMessageReceived = ctx => { ctx.Token = ctx.Request.Cookies["access_token"]; return Task.CompletedTask; } };
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = false,

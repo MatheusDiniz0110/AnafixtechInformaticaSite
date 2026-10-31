@@ -1,6 +1,280 @@
-﻿@{
-    ViewData["Title"] = "Privacy Policy";
-}
-<h1>@ViewData["Title"]</h1>
+@*
+    Política de Privacidade — AnaFixTech Informática
+    Estilos: wwwroot/css/privacy.css (carregado pela seção Head do _Layout)
+    Para atualizar contatos ou a data, edite só as variáveis do bloco abaixo.
+*@
+@{
+    ViewData["Title"] = "Política de Privacidade";
 
-<p>Use this page to detail your site's privacy policy.</p>
+    // ---- edite aqui ----
+    var atualizadoEm = new DateTime(2026, 10, 31);
+    var emailContato = "matheus.diniz.t@outlook.com";
+    var telefoneExibido = "(62) 99887-7833";
+    var whatsappNumero = "5562998877833";
+    // --------------------
+
+    var dataTexto = atualizadoEm.ToString("d 'de' MMMM 'de' yyyy", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"));
+    var dataIso = atualizadoEm.ToString("yyyy-MM-dd");
+}
+
+@section Head {
+    <meta name="description" content="Política de Privacidade da AnaFixTech Informática: quais dados pessoais coletamos, para que usamos, como protegemos e como exercer seus direitos pela LGPD." />
+    <link rel="stylesheet" href="~/css/privacy.css" asp-append-version="true" />
+}
+
+<div class="privacy">
+
+    <header class="privacy-hero">
+        <span class="privacy-eyebrow">Privacidade e proteção de dados</span>
+        <h1>Política de Privacidade</h1>
+        <p class="privacy-lead">
+            Explicamos aqui, em linguagem simples, quais dados pessoais a AnaFixTech Informática coleta,
+            para que os usamos e quais são os seus direitos, conforme a Lei Geral de Proteção de Dados
+            (LGPD — Lei nº 13.709/2018).
+        </p>
+        <p class="privacy-updated">Última atualização: <time datetime="@dataIso">@dataTexto</time></p>
+    </header>
+
+    <aside class="privacy-summary" aria-labelledby="resumo-titulo">
+        <h2 id="resumo-titulo">Resumo em poucas palavras</h2>
+        <ul>
+            <li><strong>Coletamos só o necessário</strong> para criar sua conta, atender seus pedidos e falar com você.</li>
+            <li><strong>Não vendemos</strong> seus dados pessoais.</li>
+            <li>Usamos apenas <strong>cookies essenciais</strong> (login e segurança), sem publicidade nem rastreamento.</li>
+            <li>Você pode pedir <strong>acesso, correção ou exclusão</strong> dos seus dados quando quiser.</li>
+        </ul>
+    </aside>
+
+    <div class="privacy-layout">
+
+        <nav class="privacy-toc" aria-label="Índice da política">
+            <h2>Nesta página</h2>
+            <ol>
+                <li><a href="#quem-somos">Quem somos</a></li>
+                <li><a href="#dados-coletados">Quais dados coletamos</a></li>
+                <li><a href="#finalidades">Para que usamos seus dados</a></li>
+                <li><a href="#cookies">Cookies</a></li>
+                <li><a href="#compartilhamento">Com quem compartilhamos</a></li>
+                <li><a href="#retencao">Por quanto tempo guardamos</a></li>
+                <li><a href="#seguranca">Como protegemos seus dados</a></li>
+                <li><a href="#direitos">Seus direitos</a></li>
+                <li><a href="#menores">Crianças e adolescentes</a></li>
+                <li><a href="#alteracoes">Alterações nesta política</a></li>
+                <li><a href="#contato">Contato</a></li>
+            </ol>
+        </nav>
+
+        <div class="privacy-content">
+
+            <section id="quem-somos" class="privacy-section" aria-labelledby="h-quem-somos">
+                <h2 id="h-quem-somos">Quem somos</h2>
+                <p>
+                    A <strong>AnaFixTech Informática</strong> é uma empresa de assistência técnica e serviços de TI com sede em
+                    <strong>Anápolis, Goiás</strong>, conduzida por <strong>Matheus Diniz Tereza</strong>. Para a LGPD, somos a
+                    <strong>controladora</strong> dos dados pessoais tratados neste site: decidimos como e por que eles são usados.
+                </p>
+                <p>
+                    Os assuntos de privacidade são atendidos diretamente pelo responsável, pelos canais da seção
+                    <a href="#contato">Contato</a>.
+                </p>
+            </section>
+
+            <section id="dados-coletados" class="privacy-section" aria-labelledby="h-dados">
+                <h2 id="h-dados">Quais dados coletamos</h2>
+                <p>Coletamos apenas os dados de que precisamos, conforme o que você faz no site:</p>
+
+                <div class="privacy-table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th scope="col">Categoria</th><th scope="col">Exemplos</th><th scope="col">Quando coletamos</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Dados da conta</td>
+                                <td>Nome completo, nome de usuário, e-mail, senha e equipamentos informados</td>
+                                <td>Ao criar uma conta</td>
+                            </tr>
+                            <tr>
+                                <td>Pedidos de serviço</td>
+                                <td>Nome, e-mail, telefone/WhatsApp, endereço (se buscarmos ou entregarmos o equipamento), descrição do equipamento e do problema, horário escolhido</td>
+                                <td>Ao solicitar ou agendar um serviço</td>
+                            </tr>
+                            <tr>
+                                <td>Comunicações</td>
+                                <td>Mensagens trocadas por WhatsApp, e-mail ou Instagram</td>
+                                <td>Quando você fala com a gente</td>
+                            </tr>
+                            <tr>
+                                <td>Dados técnicos</td>
+                                <td>Endereço IP, tipo de navegador e dispositivo, páginas acessadas, data e hora</td>
+                                <td>Automaticamente, em registros (logs) do servidor</td>
+                            </tr>
+                            <tr>
+                                <td>Dados nos equipamentos</td>
+                                <td>Arquivos e informações que estejam no dispositivo entregue para reparo</td>
+                                <td>Durante o diagnóstico, o reparo ou a recuperação de dados</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>
+                    <strong>Dados nos equipamentos:</strong> acessamos somente o necessário para diagnosticar e executar o serviço.
+                    Não copiamos, divulgamos nem usamos esse conteúdo para outras finalidades. Mesmo assim, recomendamos
+                    fazer um backup antes de entregar o equipamento.
+                </p>
+                <p>
+                    Não solicitamos <strong>dados pessoais sensíveis</strong> (como saúde, religião ou biometria). Evite enviá-los
+                    em formulários e mensagens.
+                </p>
+            </section>
+
+            <section id="finalidades" class="privacy-section" aria-labelledby="h-finalidades">
+                <h2 id="h-finalidades">Para que usamos seus dados</h2>
+                <p>Cada uso tem uma justificativa prevista no art. 7º da LGPD (a chamada <em>base legal</em>):</p>
+
+                <div class="privacy-table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th scope="col">Finalidade</th><th scope="col">Base legal</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Criar e gerenciar sua conta e permitir o login</td><td>Execução de contrato ou de procedimentos preliminares (inciso V)</td></tr>
+                            <tr><td>Receber, agendar e executar serviços, e honrar a garantia</td><td>Execução de contrato (inciso V)</td></tr>
+                            <tr><td>Responder dúvidas e informar o andamento do pedido por WhatsApp ou e-mail</td><td>Execução de contrato (inciso V) e legítimo interesse (inciso IX)</td></tr>
+                            <tr><td>Manter a segurança do site e prevenir fraudes e abusos</td><td>Legítimo interesse (inciso IX)</td></tr>
+                            <tr><td>Cumprir obrigações legais e fiscais</td><td>Cumprimento de obrigação legal (inciso II)</td></tr>
+                            <tr><td>Defender direitos em eventual disputa</td><td>Exercício regular de direitos (inciso VI)</td></tr>
+                            <tr><td>Enviar novidades e promoções, se algum dia o fizermos</td><td>Consentimento (inciso I), que você pode retirar quando quiser</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="cookies" class="privacy-section" aria-labelledby="h-cookies">
+                <h2 id="h-cookies">Cookies</h2>
+                <p>Cookies são pequenos arquivos guardados no seu navegador. Hoje o site usa <strong>somente cookies essenciais</strong>:</p>
+
+                <div class="privacy-table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th scope="col">Cookie</th><th scope="col">Para que serve</th><th scope="col">Duração</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>access_token</code></td>
+                                <td>Mantém você identificado depois do login. É protegido (HttpOnly e Secure), ou seja, não pode ser lido por scripts da página.</td>
+                                <td>Até 2 horas, ou até você sair</td>
+                            </tr>
+                            <tr>
+                                <td><code>.AspNetCore.Antiforgery.*</code></td>
+                                <td>Protege os formulários contra requisições forjadas (CSRF).</td>
+                                <td>Sessão do navegador</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p>
+                    No momento, <strong>não usamos</strong> cookies de publicidade, de análise de audiência ou de rastreamento.
+                    Você pode apagar os cookies pelo navegador a qualquer momento, mas, sem o cookie de login,
+                    será preciso entrar de novo a cada visita. Se um dia adotarmos outras ferramentas, esta política será atualizada.
+                </p>
+            </section>
+
+            <section id="compartilhamento" class="privacy-section" aria-labelledby="h-compartilhamento">
+                <h2 id="h-compartilhamento">Com quem compartilhamos</h2>
+                <p><strong>Não vendemos seus dados pessoais.</strong> Eles só são compartilhados quando necessário:</p>
+                <ul>
+                    <li><strong>Hospedagem e infraestrutura:</strong> serviços que mantêm o site e o banco de dados no ar.</li>
+                    <li><strong>Serviços de mensagens:</strong> como o WhatsApp (Meta), quando você nos contata ou conversamos por ele.</li>
+                    <li><strong>Recursos de terceiros carregados pelo site:</strong> por exemplo, a biblioteca de ícones Font Awesome, entregue por uma rede de distribuição de conteúdo (cdnjs/Cloudflare), que pode receber o seu endereço IP.</li>
+                    <li><strong>Autoridades públicas:</strong> quando exigido por lei ou ordem judicial.</li>
+                </ul>
+                <p>
+                    Alguns desses provedores podem tratar dados fora do Brasil; nesses casos, observamos as garantias previstas na LGPD.
+                    Os sites que ligamos a partir daqui (WhatsApp, Instagram, GitHub, LinkedIn) têm políticas de privacidade próprias.
+                </p>
+            </section>
+
+            <section id="retencao" class="privacy-section" aria-labelledby="h-retencao">
+                <h2 id="h-retencao">Por quanto tempo guardamos</h2>
+                <p>Guardamos os dados somente pelo tempo necessário para cumprir as finalidades acima:</p>
+                <ul>
+                    <li><strong>Conta:</strong> enquanto ela estiver ativa. Você pode pedir a exclusão a qualquer momento.</li>
+                    <li><strong>Pedidos de serviço:</strong> durante o atendimento, o período de garantia e o prazo exigido por obrigações legais, fiscais e de defesa de direitos.</li>
+                    <li><strong>Registros técnicos:</strong> pelo prazo necessário à segurança e à solução de problemas.</li>
+                </ul>
+                <p>Terminado o prazo, eliminamos ou anonimizamos os dados, salvo se a lei exigir a guarda.</p>
+            </section>
+
+            <section id="seguranca" class="privacy-section" aria-labelledby="h-seguranca">
+                <h2 id="h-seguranca">Como protegemos seus dados</h2>
+                @*
+                    Quando a senha passar a ser guardada com hash (PasswordHasher), acrescente a linha:
+                    <li>Senhas armazenadas de forma protegida (hash), nunca em texto legível.</li>
+                *@
+                <p>Adotamos medidas técnicas e administrativas para proteger os dados contra acesso não autorizado, perda e alteração, como:</p>
+                <ul>
+                    <li>Autenticação por token assinado, em cookie protegido (HttpOnly e Secure).</li>
+                    <li>Proteção contra requisições forjadas (CSRF) em todos os formulários.</li>
+                    <li>Acesso ao banco de dados e ao painel restrito a pessoas autorizadas, com credenciais próprias.</li>
+                </ul>
+                <p>
+                    Nenhum sistema é totalmente imune a falhas. Se ocorrer um incidente que possa causar risco ou dano relevante,
+                    comunicaremos você e a Autoridade Nacional de Proteção de Dados (ANPD), como determina a LGPD.
+                </p>
+            </section>
+
+            <section id="direitos" class="privacy-section" aria-labelledby="h-direitos">
+                <h2 id="h-direitos">Seus direitos</h2>
+                <p>Pela LGPD (art. 18), você pode pedir a qualquer momento:</p>
+                <ul>
+                    <li>Confirmação de que tratamos seus dados e acesso a eles;</li>
+                    <li>Correção de dados incompletos, inexatos ou desatualizados;</li>
+                    <li>Anonimização, bloqueio ou eliminação de dados desnecessários ou tratados em desconformidade;</li>
+                    <li>Portabilidade dos dados a outro fornecedor, mediante requisição;</li>
+                    <li>Eliminação dos dados tratados com base no seu consentimento;</li>
+                    <li>Informação sobre com quem compartilhamos seus dados;</li>
+                    <li>Informação sobre a possibilidade de não consentir e suas consequências;</li>
+                    <li>Revogação do consentimento, quando ele for a base do tratamento.</li>
+                </ul>
+                <p>
+                    <strong>Como pedir:</strong> envie a solicitação pelos canais da seção <a href="#contato">Contato</a>.
+                    Podemos pedir uma confirmação de identidade para proteger você. A LGPD prevê resposta completa em até
+                    <strong>15 dias</strong>. Se achar que seus direitos não foram atendidos, você também pode reclamar à
+                    <a href="https://www.gov.br/anpd" target="_blank" rel="noopener noreferrer">ANPD</a>.
+                </p>
+            </section>
+
+            <section id="menores" class="privacy-section" aria-labelledby="h-menores">
+                <h2 id="h-menores">Crianças e adolescentes</h2>
+                <p>
+                    Este site não é direcionado a menores de 18 anos. Pedidos de serviço e cadastros de menores devem ser feitos
+                    por um responsável legal. Se soubermos que coletamos dados de um menor sem a autorização necessária,
+                    eliminaremos essas informações.
+                </p>
+            </section>
+
+            <section id="alteracoes" class="privacy-section" aria-labelledby="h-alteracoes">
+                <h2 id="h-alteracoes">Alterações nesta política</h2>
+                <p>
+                    Podemos atualizar esta política para refletir mudanças no site ou na lei. A versão em vigor é sempre esta página,
+                    com a data de atualização no topo.
+                </p>
+            </section>
+
+            <section id="contato" class="privacy-section privacy-contact" aria-labelledby="h-contato">
+                <h2 id="h-contato">Contato</h2>
+                <p>Dúvidas sobre esta política ou pedidos sobre seus dados? Fale com o responsável:</p>
+                <ul class="privacy-contact-list">
+                    <li><span>Responsável</span><strong>Matheus Diniz Tereza — AnaFixTech Informática</strong></li>
+                    <li><span>E-mail</span><a href="mailto:@emailContato">@emailContato</a></li>
+                    <li><span>WhatsApp</span><a href="https://wa.me/@whatsappNumero" target="_blank" rel="noopener noreferrer">@telefoneExibido</a></li>
+                    <li><span>Localização</span><strong>Anápolis — Goiás, Brasil</strong></li>
+                </ul>
+            </section>
+
+        </div>
+    </div>
+</div>
