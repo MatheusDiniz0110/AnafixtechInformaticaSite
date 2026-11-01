@@ -12,7 +12,6 @@ namespace AnafixtechInformaticaSite.Models
             Name = string.Empty;
             Email = string.Empty;
             Password = string.Empty;
-            Devices = string.Empty;
             isAdmin = false;
             isActive = true;
         }
@@ -27,7 +26,6 @@ namespace AnafixtechInformaticaSite.Models
         [Required(ErrorMessage = "A senha é obrigatória")]
         public string Password { get; set; }
 
-        public string? Devices { get; set; }
         public bool isAdmin { get; set; } = false;
         public bool isActive { get; set; } = true;
     }

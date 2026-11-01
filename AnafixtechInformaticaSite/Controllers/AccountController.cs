@@ -74,8 +74,7 @@ namespace AnafixtechInformaticaSite.Controllers
                 Username = model.Username,
                 Email = model.Email,
                 Name = model.Name,
-                Password = model.Password,
-                Devices = ""
+                Password = model.Password
             };
             _context.Users.Add(newUser);
             await _context.SaveChangesAsync();

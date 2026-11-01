@@ -14,5 +14,6 @@ namespace AnafixtechInformaticaSite.Data
         public DbSet<HomePageInformation> HomePageInformation { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<Service> Services { get; set; }
+        public DbSet<ServiceRequest> ServiceRequests { get; set; }
     }
 }

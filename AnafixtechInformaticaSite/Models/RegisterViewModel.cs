@@ -12,7 +12,6 @@ namespace AnafixtechInformaticaSite.Models
         public string Email { get; set; }
         [Required]
         public string Password { get; set; }
-        public string? Devices { get; set; }
         public bool isAdmin { get; set; } = false;
         public bool isActive { get; set; } = true;
     }
