@@ -1,0 +1,225 @@
+@* Aba "Visão geral": resumo do negócio num relance. Recebe um DashboardIndexViewModel do controller. *@
+@model DashboardIndexViewModel
+@{
+    // Usa o layout com as abas da dashboard.
+    Layout = "_DashboardLayout";
+    // Título da página (aparece na aba do navegador).
+    ViewData["Title"] = "Dashboard";
+    // Informa ao layout qual aba deve ficar destacada.
+    ViewData["Tab"] = "Index";
+
+    // Maior quantidade entre os status: serve de escala (100%) para as barras.
+    var maior = Model.PedidosPorStatus.Values.DefaultIfEmpty(0).Max();
+    // Evita divisão por zero quando ainda não existe nenhuma OS.
+    if (maior == 0) { maior = 1; }
+}
+
+@* ===== Linha 1: indicadores de pedidos e tickets (cada cartão é um link para a aba correspondente) ===== *@
+<div class="db-grid db-grid--4">
+    @* Cartão: OS novas aguardando atenção. *@
+    <a class="db-kpi" asp-controller="Dashboard" asp-action="Pedidos" asp-route-status="Pending">
+        <div class="db-kpi-label">Novos pedidos</div>
+        <div class="db-kpi-value">@Model.PedidosNovos</div>
+        <div class="db-kpi-hint">aguardando atendimento</div>
+    </a>
+
+    @* Cartão: OS que estão em andamento ou aguardando algo. *@
+    <a class="db-kpi" asp-controller="Dashboard" asp-action="Pedidos" asp-route-status="InProgress">
+        <div class="db-kpi-label">Em andamento</div>
+        <div class="db-kpi-value">@Model.PedidosEmAndamento</div>
+        <div class="db-kpi-hint">em andamento ou aguardando</div>
+    </a>
+
+    @* Cartão: entregas do mês atual. *@
+    <a class="db-kpi" asp-controller="Dashboard" asp-action="Pedidos" asp-route-status="Delivered">
+        <div class="db-kpi-label">Entregues no mês</div>
+        <div class="db-kpi-value">@Model.EntregasNoMes</div>
+        <div class="db-kpi-hint">serviços finalizados</div>
+    </a>
+
+    @* Cartão: tickets de suporte ainda abertos. *@
+    <a class="db-kpi" asp-controller="Dashboard" asp-action="Tickets">
+        <div class="db-kpi-label">Tickets abertos</div>
+        <div class="db-kpi-value">@Model.TicketsAbertos</div>
+        <div class="db-kpi-hint">pendentes ou em atendimento</div>
+    </a>
+</div>
+
+@* ===== Linha 2: indicadores financeiros do mês ===== *@
+<div class="db-grid db-grid--4">
+    @* Total recebido no mês. *@
+    <a class="db-kpi" asp-controller="Dashboard" asp-action="Financeiro">
+        <div class="db-kpi-label">Entradas do mês</div>
+        <div class="db-kpi-value db-pos">@Fmt.Money(Model.EntradasMes)</div>
+    </a>
+
+    @* Total gasto no mês. *@
+    <a class="db-kpi" asp-controller="Dashboard" asp-action="Financeiro">
+        <div class="db-kpi-label">Saídas do mês</div>
+        <div class="db-kpi-value db-neg">@Fmt.Money(Model.SaidasMes)</div>
+    </a>
+
+    @* Saldo (entradas − saídas); fica vermelho se for negativo. *@
+    <a class="db-kpi" asp-controller="Dashboard" asp-action="Financeiro">
+        <div class="db-kpi-label">Saldo do mês</div>
+        <div class="db-kpi-value @(Model.SaldoMes < 0 ? "db-neg" : "")">@Fmt.Money(Model.SaldoMes)</div>
+    </a>
+
+    @* Quanto ainda falta receber das OS abertas. *@
+    <div class="db-kpi">
+        <div class="db-kpi-label">A receber</div>
+        <div class="db-kpi-value">@Fmt.Money(Model.AReceber)</div>
+        <div class="db-kpi-hint">em OS ainda não pagas</div>
+    </div>
+</div>
+
+@* ===== Linha 3: gráfico de barras por status e últimos pedidos ===== *@
+<div class="db-grid db-grid--2">
+    @* Cartão: quantas OS existem em cada status (barras proporcionais). *@
+    <div class="db-card">
+        <h2>Pedidos por status</h2>
+        @foreach (var status in Enum.GetValues<OrderStatus>())
+        {
+            @* Quantidade de OS neste status (0 se não houver nenhuma). *@
+            var quantidade = Model.PedidosPorStatus.GetValueOrDefault(status);
+            @* Largura da barra em porcentagem, em relação ao maior status. *@
+            var largura = (int)Math.Round(100.0 * quantidade / maior);
+            <div class="db-bar-row">
+                <span><span class="db-badge db-badge--@status.ToBadge()">@status.ToLabel()</span></span>
+                <div class="db-bar"><div class="db-bar-fill" style="width:@(largura)%"></div></div>
+                <strong>@quantidade</strong>
+            </div>
+        }
+    </div>
+
+    @* Cartão: as 6 OS mais recentes. *@
+    <div class="db-card">
+        <div class="db-card-head">
+            <h2>Últimos pedidos</h2>
+            <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="Pedidos">Ver todos</a>
+        </div>
+        @if (!Model.UltimosPedidos.Any())
+        {
+            <div class="db-empty">Nenhum pedido ainda.</div>
+        }
+        else
+        {
+            <ul class="db-list">
+                @foreach (var pedido in Model.UltimosPedidos)
+                {
+                    <li>
+                        <span>
+                            <a asp-controller="Dashboard" asp-action="PedidoDetalhes" asp-route-id="@pedido.Id">@pedido.Codigo</a>
+                            · @pedido.ClientName
+                            <span class="db-muted">— @pedido.ProductName</span>
+                        </span>
+                        <span class="db-badge db-badge--@pedido.Status.ToBadge()">@pedido.Status.ToLabel()</span>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+@* ===== Linha 4: agenda, estoque baixo e tickets ===== *@
+<div class="db-grid db-grid--2">
+    @* Cartão: próximos compromissos. *@
+    <div class="db-card">
+        <div class="db-card-head">
+            <h2>Próximos agendamentos</h2>
+            <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="Agenda">Abrir agenda</a>
+        </div>
+        @if (!Model.ProximosAgendamentos.Any())
+        {
+            <div class="db-empty">Nada agendado.</div>
+        }
+        else
+        {
+            <ul class="db-list">
+                @foreach (var agendamento in Model.ProximosAgendamentos)
+                {
+                    <li>
+                        <span><strong>@Fmt.Stamp(agendamento.DataHora)</strong> · @agendamento.Descricao</span>
+                        <span class="db-muted">@agendamento.Tecnico</span>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+
+    @* Cartão: peças com estoque no mínimo ou abaixo. *@
+    <div class="db-card">
+        <div class="db-card-head">
+            <h2>Estoque baixo</h2>
+            <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="Estoque" asp-route-somenteBaixo="true">Ver estoque</a>
+        </div>
+        @if (!Model.EstoqueBaixo.Any())
+        {
+            <div class="db-empty">Tudo em dia. 🎉</div>
+        }
+        else
+        {
+            <ul class="db-list">
+                @foreach (var peca in Model.EstoqueBaixo)
+                {
+                    <li>
+                        <span>@peca.Name <span class="db-muted">(mín. @peca.MinQuantity)</span></span>
+                        <span class="db-badge db-badge--@peca.Level.ToBadge()">@peca.Quantity un.</span>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+<div class="db-grid db-grid--2">
+    @* Cartão: tickets ainda abertos (os de maior prioridade primeiro). *@
+    <div class="db-card">
+        <div class="db-card-head">
+            <h2>Tickets em aberto</h2>
+            <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="Tickets">Ver tickets</a>
+        </div>
+        @if (!Model.TicketsEmAberto.Any())
+        {
+            <div class="db-empty">Nenhum ticket aberto.</div>
+        }
+        else
+        {
+            <ul class="db-list">
+                @foreach (var ticket in Model.TicketsEmAberto)
+                {
+                    <li>
+                        <span>@ticket.Subject <span class="db-muted">— @ticket.ClientName</span></span>
+                        <span class="db-badge db-badge--@ticket.Priority.ToBadge()">@ticket.Priority.ToLabel()</span>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+
+    @* Cartão: últimas notificações (as não lidas ganham um ponto azul). *@
+    <div class="db-card">
+        <div class="db-card-head">
+            <h2>Notificações recentes</h2>
+            <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="Notificacoes">Ver todas</a>
+        </div>
+        @if (!Model.NotificacoesRecentes.Any())
+        {
+            <div class="db-empty">Sem notificações.</div>
+        }
+        else
+        {
+            <ul class="db-list">
+                @foreach (var notificacao in Model.NotificacoesRecentes)
+                {
+                    <li>
+                        <a asp-controller="Dashboard" asp-action="NotificacaoAbrir" asp-route-id="@notificacao.Id">
+                            @(notificacao.IsRead ? "" : "🔵 ")@notificacao.Title
+                        </a>
+                        <span class="db-muted">@Fmt.Stamp(notificacao.CreatedAt)</span>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>

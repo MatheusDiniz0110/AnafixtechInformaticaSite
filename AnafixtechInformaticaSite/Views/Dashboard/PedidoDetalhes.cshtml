@@ -1,0 +1,242 @@
+@* Tela de uma OS: dados, status, valores, pagamento, histórico e lançamentos. Recebe um PedidoDetalhesViewModel. *@
+@model PedidoDetalhesViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = Model.Pedido.Codigo;
+    ViewData["Tab"] = "Pedidos";
+
+    // Atalho: a OS que estamos exibindo.
+    var p = Model.Pedido;
+
+    // Função local: transforma um decimal? em texto "120,50" para preencher campos de formulário (vazio se nulo).
+    string Num(decimal? v) => v.HasValue ? v.Value.ToString("0.00", System.Globalization.CultureInfo.GetCultureInfo("pt-BR")) : "";
+
+    // Data de entrega no formato que o <input type="date"> exige (aaaa-mm-dd).
+    var entregaIso = p.DeliveryDate.HasValue ? p.DeliveryDate.Value.ToString("yyyy-MM-dd") : "";
+
+    // Data de hoje no mesmo formato, para o campo de data do pagamento.
+    var hojeIso = Clock.Today.ToString("yyyy-MM-dd");
+
+    // Quanto a OS vale (preço final; senão estimado) e quanto ainda falta receber.
+    var devido = p.FinalPrice ?? p.EstimatedPrice;
+    var restante = devido.HasValue ? Math.Max(0m, devido.Value - p.ValorRecebido) : (decimal?)null;
+
+    // Link do WhatsApp do cliente: só os dígitos do telefone, com o DDI 55 se faltar.
+    var digitos = new string(p.ClientPhone.Where(char.IsDigit).ToArray());
+    if (digitos.Length == 10 || digitos.Length == 11) { digitos = "55" + digitos; }
+    var textoZap = Uri.EscapeDataString($"Olá, {p.ClientName}! Aqui é da AnaFixTech sobre a sua OS {p.Codigo}.");
+}
+
+@* ===== Cabeçalho: código, selos e botão de voltar ===== *@
+<div class="db-card-head">
+    <h2>
+        @p.Codigo
+        <span class="db-badge db-badge--@p.Status.ToBadge()">@p.Status.ToLabel()</span>
+        <span class="db-badge db-badge--@p.Urgency.ToBadge()">@p.Urgency.ToLabel()</span>
+    </h2>
+    <div class="db-inline">
+        <a class="db-btn db-btn--sm" target="_blank" rel="noopener noreferrer" href="https://wa.me/@(digitos)?text=@(textoZap)">WhatsApp do cliente</a>
+        <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="Pedidos">← Voltar</a>
+    </div>
+</div>
+
+@* ===== Linha 1: dados do cliente e do equipamento ===== *@
+<div class="db-grid db-grid--2">
+    <div class="db-card">
+        <h2>Cliente</h2>
+        <dl class="db-dl">
+            <dt>Nome</dt><dd>@p.ClientName</dd>
+            <dt>Telefone</dt><dd>@p.ClientPhone</dd>
+            <dt>E-mail</dt><dd>@p.ClientEmail</dd>
+            <dt>Endereço</dt><dd>@(string.IsNullOrWhiteSpace(p.ClientAddress) ? "—" : p.ClientAddress)</dd>
+            <dt>Busca</dt><dd>@(p.PickupRequested ? "Cliente pediu para buscarmos" : "Cliente leva/retira")</dd>
+            <dt>Criada em</dt><dd>@Fmt.Stamp(p.CreatedAt)</dd>
+        </dl>
+    </div>
+
+    <div class="db-card">
+        <h2>Equipamento e problema</h2>
+        <dl class="db-dl">
+            <dt>Equipamento</dt><dd>@p.ProductName</dd>
+            <dt>Serviço</dt><dd>@(p.Service?.Title ?? "—")</dd>
+            <dt>Problema</dt><dd style="white-space:pre-wrap">@p.ProblemDescription</dd>
+        </dl>
+    </div>
+</div>
+
+@* ===== Linha 2: mudança de status e dados técnicos ===== *@
+<div class="db-grid db-grid--2">
+    @* Cartão: muda o status (envia para PedidoStatus). *@
+    <div class="db-card">
+        <h2>Alterar status</h2>
+        <form asp-controller="Dashboard" asp-action="PedidoStatus" method="post" class="db-form">
+            @* Campo oculto: diz qual OS está sendo alterada. *@
+            <input type="hidden" name="id" value="@p.Id" />
+            <div class="db-field">
+                <label>Novo status</label>
+                <select name="status" class="db-select">
+                    @foreach (var s in Enum.GetValues<OrderStatus>())
+                    {
+                        <option value="@s" selected="@(p.Status == s)">@s.ToLabel()</option>
+                    }
+                </select>
+            </div>
+            <div class="db-field">
+                <label>Observação / motivo</label>
+                <input name="nota" class="db-input" maxlength="500" placeholder="Obrigatória para cancelar OS concluída" />
+            </div>
+            <div class="db-field"><button type="submit" class="db-btn db-btn--primary">Salvar status</button></div>
+        </form>
+    </div>
+
+    @* Cartão: dados técnicos e valores (envia para PedidoSalvar). *@
+    <div class="db-card">
+        <h2>Dados técnicos e valores</h2>
+        <form asp-controller="Dashboard" asp-action="PedidoSalvar" method="post" class="db-form">
+            <input type="hidden" name="id" value="@p.Id" />
+            <div class="db-field">
+                <label>Urgência</label>
+                <select name="urgency" class="db-select">
+                    @foreach (var u in Enum.GetValues<UrgencyLevel>())
+                    {
+                        <option value="@u" selected="@(p.Urgency == u)">@u.ToLabel()</option>
+                    }
+                </select>
+            </div>
+            <div class="db-field">
+                <label>Previsão de entrega</label>
+                <input type="date" name="deliveryDate" value="@entregaIso" class="db-input" />
+            </div>
+            <div class="db-field">
+                <label>Preço estimado</label>
+                <input name="estimatedPrice" value="@Num(p.EstimatedPrice)" class="db-input" inputmode="decimal" placeholder="0,00" />
+            </div>
+            <div class="db-field">
+                <label>Preço final</label>
+                <input name="finalPrice" value="@Num(p.FinalPrice)" class="db-input" inputmode="decimal" placeholder="0,00" />
+            </div>
+            <div class="db-field">
+                <label>Observação do preço</label>
+                <input name="priceNote" value="@p.PriceNote" class="db-input" maxlength="120" placeholder="Ex.: A combinar" />
+            </div>
+            <div class="db-field">
+                <label>Peça usada (estoque)</label>
+                <select name="stockItemId" class="db-select">
+                    <option value="">— nenhuma —</option>
+                    @foreach (var peca in Model.Pecas)
+                    {
+                        <option value="@peca.Id" selected="@(p.StockItemId == peca.Id)">@peca.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="db-field db-field--full">
+                <label>Anotações do técnico (internas)</label>
+                <textarea name="technicianNotes" class="db-textarea" maxlength="2000">@p.TechnicianNotes</textarea>
+            </div>
+            <div class="db-field db-field--full"><button type="submit" class="db-btn db-btn--primary">Salvar dados</button></div>
+        </form>
+    </div>
+</div>
+
+@* ===== Linha 3: pagamento ===== *@
+<div class="db-card" style="margin-bottom:1rem">
+    <div class="db-card-head">
+        <h2>Pagamento <span class="db-badge db-badge--@p.PaymentStatus.ToBadge()">@p.PaymentStatus.ToLabel()</span></h2>
+    </div>
+
+    @* Resumo: valor combinado, recebido e restante. *@
+    <div class="db-grid db-grid--4">
+        <div class="db-kpi"><div class="db-kpi-label">Valor da OS</div><div class="db-kpi-value">@(devido.HasValue ? Fmt.Money(devido) : (p.PriceNote ?? "A combinar"))</div></div>
+        <div class="db-kpi"><div class="db-kpi-label">Recebido</div><div class="db-kpi-value db-pos">@Fmt.Money(p.ValorRecebido)</div></div>
+        <div class="db-kpi"><div class="db-kpi-label">Restante</div><div class="db-kpi-value">@Fmt.Money(restante)</div></div>
+        <div class="db-kpi"><div class="db-kpi-label">Último pagamento</div><div class="db-kpi-value" style="font-size:1.1rem">@Fmt.Date(p.PaymentDate)</div><div class="db-kpi-hint">@(p.PaymentMethod.HasValue ? p.PaymentMethod.Value.ToLabel() : "—")</div></div>
+    </div>
+
+    @* Formulário de novo pagamento: atualiza a OS e cria o lançamento financeiro juntos. *@
+    @if (p.Status != OrderStatus.Cancelled)
+    {
+        <form asp-controller="Dashboard" asp-action="PedidoPagamento" method="post" class="db-form">
+            <input type="hidden" name="id" value="@p.Id" />
+            <div class="db-field">
+                <label>Valor pago</label>
+                <input name="valor" class="db-input" inputmode="decimal" placeholder="0,00" required />
+            </div>
+            <div class="db-field">
+                <label>Forma de pagamento</label>
+                <select name="forma" class="db-select">
+                    @foreach (var forma in Enum.GetValues<PaymentMethod>())
+                    {
+                        <option value="@forma">@forma.ToLabel()</option>
+                    }
+                </select>
+            </div>
+            <div class="db-field">
+                <label>Data</label>
+                <input type="date" name="data" value="@hojeIso" class="db-input" />
+            </div>
+            <div class="db-field">
+                <label>Observação</label>
+                <input name="observacao" class="db-input" maxlength="500" />
+            </div>
+            <div class="db-field"><button type="submit" class="db-btn db-btn--primary">Registrar pagamento</button></div>
+        </form>
+        <div class="db-muted" style="margin-top:.6rem">O pagamento atualiza a OS e cria o lançamento no financeiro ao mesmo tempo.</div>
+    }
+</div>
+
+@* ===== Linha 4: histórico e lançamentos ===== *@
+<div class="db-grid db-grid--2">
+    @* Cartão: histórico de status, do mais recente para o mais antigo. *@
+    <div class="db-card">
+        <h2>Histórico de status</h2>
+        <ul class="db-list">
+            @foreach (var h in p.StatusHistory.OrderByDescending(x => x.ChangedAt))
+            {
+                <li>
+                    <span>
+                        @(h.FromStatus.HasValue ? h.FromStatus.Value.ToLabel() + " → " : "")<strong>@h.ToStatus.ToLabel()</strong>
+                        <span class="db-muted">· @h.ChangedBy</span>
+                        @if (!string.IsNullOrWhiteSpace(h.Note))
+                        {
+                            <div class="db-muted">@h.Note</div>
+                        }
+                    </span>
+                    <span class="db-muted">@Fmt.Stamp(h.ChangedAt)</span>
+                </li>
+            }
+        </ul>
+    </div>
+
+    @* Cartão: pagamentos já lançados no financeiro para esta OS. *@
+    <div class="db-card">
+        <h2>Lançamentos desta OS</h2>
+        @if (!Model.Lancamentos.Any())
+        {
+            <div class="db-empty">Nenhum pagamento registrado.</div>
+        }
+        else
+        {
+            <ul class="db-list">
+                @foreach (var l in Model.Lancamentos)
+                {
+                    <li>
+                        <span>@Fmt.Date(l.Data) · @l.FormaPagamento.ToLabel()</span>
+                        <strong class="db-pos">@Fmt.Money(l.Valor)</strong>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+@* ===== Zona de risco: excluir a OS (pede confirmação no navegador) ===== *@
+<div class="db-card">
+    <div class="db-card-head">
+        <h2>Excluir OS</h2>
+        <form asp-controller="Dashboard" asp-action="PedidoExcluir" method="post" onsubmit="return confirm('Excluir esta OS definitivamente?');">
+            <input type="hidden" name="id" value="@p.Id" />
+            <button type="submit" class="db-btn db-btn--danger">Excluir</button>
+        </form>
+    </div>
+    <div class="db-muted">Só é possível excluir OS sem pagamentos. Caso contrário, cancele a OS.</div>
+</div>

@@ -1,0 +1,95 @@
+@* Formulário para criar uma OS manualmente pelo painel. Recebe um PedidoFormViewModel. *@
+@model PedidoFormViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Nova OS";
+    ViewData["Tab"] = "Pedidos";
+}
+
+<div class="db-card-head">
+    <h2>Nova ordem de serviço</h2>
+    <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="Pedidos">← Voltar</a>
+</div>
+
+<div class="db-card">
+    @* O formulário envia (POST) os dados para a action PedidoNovo do DashboardController. *@
+    <form asp-controller="Dashboard" asp-action="PedidoNovo" method="post" class="db-form">
+        @* Mostra erros gerais de validação (os de cada campo aparecem abaixo deles). *@
+        <div asp-validation-summary="ModelOnly" class="db-alert db-alert--erro db-field--full"></div>
+
+        @* ---- Dados do cliente ---- *@
+        <div class="db-field">
+            <label asp-for="ClientName"></label>
+            <input asp-for="ClientName" class="db-input" autocomplete="off" />
+            <span asp-validation-for="ClientName" class="db-error"></span>
+        </div>
+        <div class="db-field">
+            <label asp-for="ClientPhone"></label>
+            <input asp-for="ClientPhone" class="db-input" placeholder="(62) 99999-9999" />
+            <span asp-validation-for="ClientPhone" class="db-error"></span>
+        </div>
+        <div class="db-field">
+            <label asp-for="ClientEmail"></label>
+            <input asp-for="ClientEmail" class="db-input" />
+            <span asp-validation-for="ClientEmail" class="db-error"></span>
+        </div>
+        <div class="db-field db-field--full">
+            <label asp-for="ClientAddress"></label>
+            <input asp-for="ClientAddress" class="db-input" placeholder="Preencha se for buscar ou entregar o equipamento" />
+        </div>
+        <div class="db-field db-field--full">
+            <label class="db-check"><input asp-for="PickupRequested" /> Buscar o equipamento no endereço</label>
+        </div>
+
+        @* ---- Equipamento e problema ---- *@
+        <div class="db-field">
+            <label asp-for="ProductName"></label>
+            <input asp-for="ProductName" class="db-input" placeholder="Ex.: Notebook Dell Inspiron" />
+            <span asp-validation-for="ProductName" class="db-error"></span>
+        </div>
+
+        @* Serviço do catálogo (opcional): ao escolher, o preço do catálogo vira o preço estimado. *@
+        <div class="db-field">
+            <label asp-for="ServiceId"></label>
+            <select asp-for="ServiceId" class="db-select">
+                <option value="">— nenhum / outro problema —</option>
+                @foreach (var servico in Model.Servicos)
+                {
+                    <option value="@servico.Id">@servico.Title — @Fmt.Money(servico.Price)</option>
+                }
+            </select>
+        </div>
+
+        @* Urgência: um <option> para cada valor do enum; a opção atual vem marcada. *@
+        <div class="db-field">
+            <label asp-for="Urgency"></label>
+            <select name="Urgency" class="db-select">
+                @foreach (var u in Enum.GetValues<UrgencyLevel>())
+                {
+                    <option value="@u" selected="@(Model.Urgency == u)">@u.ToLabel()</option>
+                }
+            </select>
+        </div>
+
+        <div class="db-field">
+            <label asp-for="EstimatedPrice"></label>
+            <input asp-for="EstimatedPrice" class="db-input" inputmode="decimal" placeholder="0,00 (vazio = a combinar)" />
+            <span asp-validation-for="EstimatedPrice" class="db-error"></span>
+        </div>
+
+        <div class="db-field db-field--full">
+            <label asp-for="ProblemDescription"></label>
+            <textarea asp-for="ProblemDescription" class="db-textarea" placeholder="O que está acontecendo com o equipamento?"></textarea>
+            <span asp-validation-for="ProblemDescription" class="db-error"></span>
+        </div>
+
+        <div class="db-field db-field--full">
+            <button type="submit" class="db-btn db-btn--primary">Criar OS</button>
+        </div>
+    </form>
+</div>
+
+@* Carrega os scripts de validação no navegador (mensagens aparecem antes de enviar). *@
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,146 @@
+@* Aba "Agenda": compromissos e horários disponíveis. Recebe um AgendaViewModel. *@
+@model AgendaViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Agenda";
+    ViewData["Tab"] = "Agenda";
+}
+
+@* ===== COMPROMISSOS ===== *@
+<div class="db-card-head"><h2>Agendamentos</h2></div>
+
+@* Formulário expansível de novo agendamento (envia para AgendamentoNovo). Os "name" seguem o AgendamentoFormViewModel. *@
+<div class="db-card" style="margin-bottom:1rem">
+    <details>
+        <summary>+ Novo agendamento</summary>
+        <form asp-controller="Dashboard" asp-action="AgendamentoNovo" method="post" class="db-form">
+            <div class="db-field">
+                <label>Tipo</label>
+                <select name="Tipo" class="db-select">
+                    @foreach (var t in Enum.GetValues<AgendamentoTipo>())
+                    {
+                        <option value="@t" selected="@(t == AgendamentoTipo.Visita)">@t.ToLabel()</option>
+                    }
+                </select>
+            </div>
+            <div class="db-field">
+                <label>OS relacionada</label>
+                <select name="ServiceOrderId" class="db-select">
+                    <option value="">— nenhuma —</option>
+                    @foreach (var pedido in Model.PedidosAbertos)
+                    {
+                        <option value="@pedido.Id">@pedido.Codigo — @pedido.ClientName</option>
+                    }
+                </select>
+            </div>
+            <div class="db-field"><label>Técnico</label><input name="Tecnico" class="db-input" required maxlength="80" /></div>
+            <div class="db-field"><label>Data e hora</label><input type="datetime-local" name="DataHora" class="db-input" required /></div>
+            <div class="db-field db-field--full"><label>Descrição</label><input name="Descricao" class="db-input" required maxlength="300" /></div>
+            <div class="db-field"><label>Cliente</label><input name="ClientName" class="db-input" maxlength="120" /></div>
+            <div class="db-field"><label>Telefone</label><input name="ClientPhone" class="db-input" maxlength="30" /></div>
+            <div class="db-field db-field--full"><label>Endereço</label><input name="Endereco" class="db-input" maxlength="250" /></div>
+            <div class="db-field"><button type="submit" class="db-btn db-btn--primary">Agendar</button></div>
+        </form>
+    </details>
+</div>
+
+@* Tabela de compromissos. *@
+<div class="db-table-wrap" style="margin-bottom:2rem">
+    <table class="db-table">
+        <thead><tr><th>Quando</th><th>Tipo</th><th>Descrição</th><th>Cliente</th><th>Técnico</th><th>Status</th><th>Alterar</th></tr></thead>
+        <tbody>
+            @foreach (var a in Model.Agendamentos)
+            {
+                <tr>
+                    <td><strong>@Fmt.Stamp(a.DataHora)</strong></td>
+                    <td>@a.Tipo.ToLabel()</td>
+                    <td>
+                        @a.Descricao
+                        @if (a.ServiceOrder != null)
+                        {
+                            <a asp-controller="Dashboard" asp-action="PedidoDetalhes" asp-route-id="@a.ServiceOrderId">(@a.ServiceOrder.Codigo)</a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(a.Endereco))
+                        {
+                            <div class="db-muted">📍 @a.Endereco</div>
+                        }
+                    </td>
+                    <td>@a.ClientName<div class="db-muted">@a.ClientPhone</div></td>
+                    <td>@a.Tecnico</td>
+                    <td><span class="db-badge db-badge--@a.Status.ToBadge()">@a.Status.ToLabel()</span></td>
+                    <td>
+                        @* Troca o status do compromisso (envia para AgendamentoAlterarStatus). *@
+                        <form asp-controller="Dashboard" asp-action="AgendamentoAlterarStatus" method="post" class="db-inline">
+                            <input type="hidden" name="id" value="@a.Id" />
+                            <select name="status" class="db-select" style="width:130px">
+                                @foreach (var s in Enum.GetValues<AgendamentoStatus>())
+                                {
+                                    <option value="@s" selected="@(a.Status == s)">@s.ToLabel()</option>
+                                }
+                            </select>
+                            <button type="submit" class="db-btn db-btn--sm">OK</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Agendamentos.Any())
+            {
+                <tr><td colspan="7" class="db-empty">Nenhum agendamento.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@* ===== HORÁRIOS DISPONÍVEIS ===== *@
+<div class="db-card-head"><h2>Horários disponíveis</h2></div>
+
+@* Formulário expansível de novo horário (envia para HorarioNovo). *@
+<div class="db-card" style="margin-bottom:1rem">
+    <details>
+        <summary>+ Abrir horário</summary>
+        <form asp-controller="Dashboard" asp-action="HorarioNovo" method="post" class="db-form">
+            <div class="db-field"><label>Data e hora</label><input type="datetime-local" name="DataHora" class="db-input" required /></div>
+            <div class="db-field"><label>Técnico</label><input name="Tecnico" class="db-input" required maxlength="80" /></div>
+            <div class="db-field"><label>Duração (min)</label><input type="number" name="DuracaoMinutos" value="60" min="15" max="480" class="db-input" /></div>
+            <div class="db-field"><label>Observação</label><input name="Observacao" class="db-input" maxlength="300" /></div>
+            <div class="db-field"><button type="submit" class="db-btn db-btn--primary">Criar horário</button></div>
+        </form>
+    </details>
+</div>
+
+@* Tabela de horários. *@
+<div class="db-table-wrap">
+    <table class="db-table">
+        <thead><tr><th>Quando</th><th>Técnico</th><th>Duração</th><th>Status</th><th>Observação</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var h in Model.Horarios)
+            {
+                <tr>
+                    <td><strong>@Fmt.Stamp(h.DataHora)</strong></td>
+                    <td>@h.Tecnico</td>
+                    <td>@h.DuracaoMinutos min</td>
+                    <td><span class="db-badge db-badge--@h.Status.ToBadge()">@h.Status.ToLabel()</span></td>
+                    <td>@h.Observacao</td>
+                    <td class="db-num">
+                        @* Bloquear/liberar (não aparece para horários já reservados). *@
+                        @if (h.Status != SlotStatus.Reservado)
+                        {
+                            <form asp-controller="Dashboard" asp-action="HorarioBloquear" method="post" class="db-inline">
+                                <input type="hidden" name="id" value="@h.Id" />
+                                <button type="submit" class="db-btn db-btn--sm">@(h.Status == SlotStatus.Bloqueado ? "Liberar" : "Bloquear")</button>
+                            </form>
+                            <form asp-controller="Dashboard" asp-action="HorarioExcluir" method="post" class="db-inline" onsubmit="return confirm('Excluir este horário?');">
+                                <input type="hidden" name="id" value="@h.Id" />
+                                <button type="submit" class="db-btn db-btn--danger db-btn--sm">Excluir</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (!Model.Horarios.Any())
+            {
+                <tr><td colspan="6" class="db-empty">Nenhum horário aberto.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

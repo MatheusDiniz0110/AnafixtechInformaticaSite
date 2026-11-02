@@ -1,0 +1,77 @@
+@* Aba "Pedidos (OS)": lista com filtro por status e busca. Recebe um PedidosViewModel. *@
+@model PedidosViewModel
+@{
+    Layout = "_DashboardLayout";            // layout com as abas
+    ViewData["Title"] = "Pedidos";          // título da página
+    ViewData["Tab"] = "Pedidos";            // destaca a aba "Pedidos (OS)"
+
+    // Total geral de OS (soma de todos os status) para o botão "Todos".
+    var total = Model.ContagemPorStatus.Values.Sum();
+}
+
+@* Cabeçalho da aba com o botão de criar uma OS manualmente. *@
+<div class="db-card-head">
+    <h2>Ordens de serviço</h2>
+    <a class="db-btn db-btn--primary" asp-controller="Dashboard" asp-action="PedidoNovo">+ Nova OS</a>
+</div>
+
+@* Filtros por status: o botão do filtro atual fica azul (classe "active"). *@
+<div class="db-chips">
+    @* "Todos": sem status no endereço; preserva o texto da busca. *@
+    <a class="db-chip @(Model.Status == null ? "active" : "")" asp-controller="Dashboard" asp-action="Pedidos" asp-route-busca="@Model.Busca">Todos (@total)</a>
+
+    @* Um botão para cada status, com a quantidade ao lado. *@
+    @foreach (var s in Enum.GetValues<OrderStatus>())
+    {
+        <a class="db-chip @(Model.Status == s ? "active" : "")" asp-controller="Dashboard" asp-action="Pedidos" asp-route-status="@s" asp-route-busca="@Model.Busca">
+            @s.ToLabel() (@Model.ContagemPorStatus.GetValueOrDefault(s))
+        </a>
+    }
+</div>
+
+@* Busca por texto (método GET: o termo vai no endereço). Mantém o filtro de status escolhido. *@
+<form method="get" asp-controller="Dashboard" asp-action="Pedidos" class="db-form" style="margin-bottom:1rem">
+    @* Campo oculto: repete o status atual para a busca não perdê-lo. *@
+    <input type="hidden" name="status" value="@Model.Status" />
+    <div class="db-field db-field--full">
+        <input class="db-input" name="busca" value="@Model.Busca" placeholder="Buscar por cliente, equipamento, telefone ou e-mail" />
+    </div>
+    <div class="db-field"><button type="submit" class="db-btn">Buscar</button></div>
+</form>
+
+@* Tabela de OS. *@
+<div class="db-table-wrap">
+    <table class="db-table">
+        <thead>
+            <tr>
+                <th>OS</th><th>Cliente</th><th>Equipamento</th><th>Urgência</th><th>Status</th>
+                <th class="db-num">Valor</th><th>Pagamento</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var pedido in Model.Pedidos)
+            {
+                @* Valor a mostrar: preço final se existir, senão o estimado. *@
+                var valor = pedido.FinalPrice ?? pedido.EstimatedPrice;
+                <tr>
+                    <td>
+                        <a asp-controller="Dashboard" asp-action="PedidoDetalhes" asp-route-id="@pedido.Id"><strong>@pedido.Codigo</strong></a>
+                        <div class="db-muted">@Fmt.Date(pedido.CreatedAt)</div>
+                    </td>
+                    <td>@pedido.ClientName<div class="db-muted">@pedido.ClientPhone</div></td>
+                    <td>@pedido.ProductName</td>
+                    <td><span class="db-badge db-badge--@pedido.Urgency.ToBadge()">@pedido.Urgency.ToLabel()</span></td>
+                    <td><span class="db-badge db-badge--@pedido.Status.ToBadge()">@pedido.Status.ToLabel()</span></td>
+                    <td class="db-num">@(valor.HasValue ? Fmt.Money(valor) : (pedido.PriceNote ?? "—"))</td>
+                    <td><span class="db-badge db-badge--@pedido.PaymentStatus.ToBadge()">@pedido.PaymentStatus.ToLabel()</span></td>
+                    <td class="db-num"><a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="PedidoDetalhes" asp-route-id="@pedido.Id">Abrir</a></td>
+                </tr>
+            }
+            @* Mensagem quando a lista está vazia. *@
+            @if (!Model.Pedidos.Any())
+            {
+                <tr><td colspan="8" class="db-empty">Nenhum pedido encontrado.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

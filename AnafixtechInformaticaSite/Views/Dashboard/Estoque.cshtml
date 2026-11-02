@@ -1,0 +1,114 @@
+@* Aba "Estoque": peças, níveis e ações de compra/ajuste. Recebe um EstoqueViewModel. *@
+@model EstoqueViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Estoque";
+    ViewData["Tab"] = "Estoque";
+
+    // Quantidade de peças abaixo do mínimo (para o aviso no topo).
+    var baixos = Model.Itens.Count(i => i.Level != StockLevel.Ok);
+}
+
+<div class="db-card-head">
+    <h2>Estoque de peças</h2>
+    @* Filtro rápido: alterna entre "ver tudo" e "só estoque baixo". *@
+    <div class="db-inline">
+        <a class="db-chip @(!Model.SomenteBaixo ? "active" : "")" asp-controller="Dashboard" asp-action="Estoque">Todas</a>
+        <a class="db-chip @(Model.SomenteBaixo ? "active" : "")" asp-controller="Dashboard" asp-action="Estoque" asp-route-somenteBaixo="true">Só estoque baixo (@baixos)</a>
+    </div>
+</div>
+
+@* Busca por nome da peça ou fornecedor. *@
+<form method="get" asp-controller="Dashboard" asp-action="Estoque" class="db-form" style="margin-bottom:1rem">
+    <input type="hidden" name="somenteBaixo" value="@(Model.SomenteBaixo ? "true" : "false")" />
+    <div class="db-field db-field--full"><input class="db-input" name="busca" value="@Model.Busca" placeholder="Buscar por peça ou fornecedor" /></div>
+    <div class="db-field"><button type="submit" class="db-btn">Buscar</button></div>
+</form>
+
+@* Cartão expansível com o formulário de nova peça (envia para EstoqueNovo). *@
+<div class="db-card" style="margin-bottom:1rem">
+    <details>
+        <summary>+ Cadastrar nova peça</summary>
+        <form asp-controller="Dashboard" asp-action="EstoqueNovo" method="post" class="db-form">
+            <div class="db-field"><label>Nome</label><input name="Name" class="db-input" required maxlength="120" /></div>
+            <div class="db-field">
+                <label>Categoria</label>
+                <select name="Category" class="db-select">
+                    @foreach (var c in DashboardLists.CategoriasEstoque)
+                    {
+                        <option value="@c">@c</option>
+                    }
+                </select>
+            </div>
+            <div class="db-field"><label>Quantidade</label><input type="number" min="0" name="Quantity" value="0" class="db-input" /></div>
+            <div class="db-field"><label>Mínimo</label><input type="number" min="0" name="MinQuantity" value="1" class="db-input" /></div>
+            <div class="db-field"><label>Preço de compra</label><input name="PurchasePrice" class="db-input" inputmode="decimal" placeholder="0,00" /></div>
+            <div class="db-field"><label>Fornecedor</label><input name="Supplier" class="db-input" maxlength="120" /></div>
+            <div class="db-field"><label>Local guardado</label><input name="Location" class="db-input" maxlength="120" /></div>
+            <div class="db-field"><label>Descrição</label><input name="Description" class="db-input" maxlength="500" /></div>
+            <div class="db-field"><button type="submit" class="db-btn db-btn--primary">Cadastrar</button></div>
+        </form>
+    </details>
+</div>
+
+@* Tabela de peças. *@
+<div class="db-table-wrap">
+    <table class="db-table">
+        <thead>
+            <tr><th>Peça</th><th>Categoria</th><th class="db-num">Qtd.</th><th class="db-num">Mín.</th><th>Nível</th><th class="db-num">Preço</th><th>Fornecedor</th><th>Última compra</th><th>Ações</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Itens)
+            {
+                <tr>
+                    <td><strong>@item.Name</strong><div class="db-muted">@item.Location</div></td>
+                    <td>@item.Category</td>
+                    <td class="db-num"><strong>@item.Quantity</strong></td>
+                    <td class="db-num">@item.MinQuantity</td>
+                    <td><span class="db-badge db-badge--@item.Level.ToBadge()">@item.Level.ToLabel()</span></td>
+                    <td class="db-num">@Fmt.Money(item.PurchasePrice)</td>
+                    <td>@(item.Supplier ?? "—")</td>
+                    <td>@Fmt.Date(item.LastPurchaseDate)</td>
+                    <td>
+                        @* Ações da peça escondidas num bloco que abre ao clicar. *@
+                        <details>
+                            <summary>Ações</summary>
+                            <div class="db-details-body">
+                                @* Registrar compra: soma ao estoque e lança a saída no financeiro. *@
+                                <form asp-controller="Dashboard" asp-action="EstoqueComprar" method="post" class="db-inline">
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <input type="number" min="1" name="quantidade" value="1" class="db-input" style="width:80px" title="Quantidade comprada" />
+                                    <input name="valorUnitario" class="db-input" style="width:100px" inputmode="decimal" placeholder="Valor un." title="Valor unitário" required />
+                                    <select name="forma" class="db-select" style="width:140px">
+                                        @foreach (var f in Enum.GetValues<PaymentMethod>())
+                                        {
+                                            <option value="@f">@f.ToLabel()</option>
+                                        }
+                                    </select>
+                                    <button type="submit" class="db-btn db-btn--primary db-btn--sm">Registrar compra</button>
+                                </form>
+
+                                @* Ajustar: soma (+) ou subtrai (−) sem mexer no financeiro. *@
+                                <form asp-controller="Dashboard" asp-action="EstoqueAjustar" method="post" class="db-inline">
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <input type="number" name="delta" value="-1" class="db-input" style="width:80px" title="Use número negativo para dar baixa" />
+                                    <button type="submit" class="db-btn db-btn--sm">Ajustar quantidade</button>
+                                </form>
+
+                                @* Excluir a peça (pede confirmação). *@
+                                <form asp-controller="Dashboard" asp-action="EstoqueExcluir" method="post" class="db-inline" onsubmit="return confirm('Excluir esta peça?');">
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <button type="submit" class="db-btn db-btn--danger db-btn--sm">Excluir peça</button>
+                                </form>
+                            </div>
+                        </details>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Itens.Any())
+            {
+                <tr><td colspan="9" class="db-empty">Nenhuma peça encontrada.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

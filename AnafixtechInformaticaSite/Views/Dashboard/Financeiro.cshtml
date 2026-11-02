@@ -1,0 +1,150 @@
+@* Aba "Financeiro": resumo do período e lista de lançamentos. Recebe um FinanceiroViewModel. *@
+@model FinanceiroViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Financeiro";
+    ViewData["Tab"] = "Financeiro";
+
+    // Datas do filtro no formato que o <input type="date"> exige (aaaa-mm-dd).
+    var deIso = Model.De.ToString("yyyy-MM-dd");
+    var ateIso = Model.Ate.ToString("yyyy-MM-dd");
+}
+
+@* Cabeçalho com os botões de novo lançamento (a tela já abre com o tipo escolhido). *@
+<div class="db-card-head">
+    <h2>Financeiro</h2>
+    <div class="db-inline">
+        <a class="db-btn db-btn--primary" asp-controller="Dashboard" asp-action="LancamentoNovo" asp-route-tipo="Entrada">+ Entrada</a>
+        <a class="db-btn" asp-controller="Dashboard" asp-action="LancamentoNovo" asp-route-tipo="Saida">+ Saída</a>
+    </div>
+</div>
+
+@* Filtros: período, tipo e sócio (método GET: ficam no endereço). *@
+<form method="get" asp-controller="Dashboard" asp-action="Financeiro" class="db-form" style="margin-bottom:1rem">
+    <div class="db-field"><label>De</label><input type="date" name="de" value="@deIso" class="db-input" /></div>
+    <div class="db-field"><label>Até</label><input type="date" name="ate" value="@ateIso" class="db-input" /></div>
+    <div class="db-field">
+        <label>Tipo</label>
+        <select name="tipo" class="db-select">
+            <option value="">Todos</option>
+            @foreach (var t in Enum.GetValues<EntryType>())
+            {
+                <option value="@t" selected="@(Model.Tipo == t)">@t.ToLabel()</option>
+            }
+        </select>
+    </div>
+    <div class="db-field">
+        <label>Sócio</label>
+        <select name="socio" class="db-select">
+            <option value="">Todos</option>
+            @foreach (var s in DashboardLists.Socios)
+            {
+                <option value="@s" selected="@(Model.Socio == s)">@s</option>
+            }
+        </select>
+    </div>
+    <div class="db-field"><button type="submit" class="db-btn">Filtrar</button></div>
+</form>
+
+@* Indicadores do período filtrado. *@
+<div class="db-grid db-grid--4">
+    <div class="db-kpi"><div class="db-kpi-label">Entradas</div><div class="db-kpi-value db-pos">@Fmt.Money(Model.Entradas)</div></div>
+    <div class="db-kpi"><div class="db-kpi-label">Saídas</div><div class="db-kpi-value db-neg">@Fmt.Money(Model.Saidas)</div></div>
+    <div class="db-kpi"><div class="db-kpi-label">Saldo</div><div class="db-kpi-value @(Model.Saldo < 0 ? "db-neg" : "")">@Fmt.Money(Model.Saldo)</div></div>
+</div>
+
+@* Resumos lado a lado: por categoria e por sócio. *@
+<div class="db-grid db-grid--2">
+    <div class="db-card">
+        <h2>Por categoria</h2>
+        @if (!Model.PorCategoria.Any())
+        {
+            <div class="db-empty">Sem lançamentos no período.</div>
+        }
+        else
+        {
+            <ul class="db-list">
+                @foreach (var c in Model.PorCategoria)
+                {
+                    <li>
+                        <span>@c.Categoria <span class="db-muted">(@c.Tipo.ToLabel())</span></span>
+                        <strong class="@(c.Tipo == EntryType.Entrada ? "db-pos" : "db-neg")">@Fmt.Money(c.Total)</strong>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+
+    <div class="db-card">
+        <h2>Por sócio</h2>
+        @if (!Model.PorSocio.Any())
+        {
+            <div class="db-empty">Sem lançamentos no período.</div>
+        }
+        else
+        {
+            <div class="db-table-wrap">
+                <table class="db-table" style="min-width:0">
+                    <thead><tr><th>Sócio</th><th class="db-num">Entradas</th><th class="db-num">Saídas</th></tr></thead>
+                    <tbody>
+                        @foreach (var s in Model.PorSocio)
+                        {
+                            <tr>
+                                <td>@s.Socio</td>
+                                <td class="db-num db-pos">@Fmt.Money(s.Entradas)</td>
+                                <td class="db-num db-neg">@Fmt.Money(s.Saidas)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@* Aviso se havia mais linhas do que o limite exibido. *@
+@if (Model.Cortado)
+{
+    <div class="db-alert db-alert--erro">Mostrando apenas os lançamentos mais recentes. Reduza o período para ver os demais.</div>
+}
+
+@* Tabela de lançamentos. *@
+<div class="db-table-wrap">
+    <table class="db-table">
+        <thead>
+            <tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Sócio</th><th>Forma</th><th>Origem</th><th class="db-num">Valor</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var l in Model.Lancamentos)
+            {
+                <tr>
+                    <td>@Fmt.Date(l.Data)</td>
+                    <td>
+                        @l.Descricao
+                        @* Se o lançamento veio de uma OS, mostra o link para ela. *@
+                        @if (l.ServiceOrder != null)
+                        {
+                            <a asp-controller="Dashboard" asp-action="PedidoDetalhes" asp-route-id="@l.ServiceOrderId">(@l.ServiceOrder.Codigo)</a>
+                        }
+                    </td>
+                    <td>@l.Categoria</td>
+                    <td>@l.Socio</td>
+                    <td>@l.FormaPagamento.ToLabel()</td>
+                    <td><span class="db-badge db-badge--gray">@l.Origem.ToLabel()</span></td>
+                    <td class="db-num"><strong class="@(l.Tipo == EntryType.Entrada ? "db-pos" : "db-neg")">@(l.Tipo == EntryType.Entrada ? "+" : "−") @Fmt.Money(l.Valor)</strong></td>
+                    <td class="db-num">
+                        @* Excluir pede confirmação no navegador. *@
+                        <form asp-controller="Dashboard" asp-action="LancamentoExcluir" method="post" class="db-inline" onsubmit="return confirm('Excluir este lançamento?');">
+                            <input type="hidden" name="id" value="@l.Id" />
+                            <button type="submit" class="db-btn db-btn--danger db-btn--sm">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Lancamentos.Any())
+            {
+                <tr><td colspan="8" class="db-empty">Nenhum lançamento no período.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

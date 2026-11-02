@@ -1,0 +1,117 @@
+@* Formulário de novo lançamento financeiro. Recebe um LancamentoFormViewModel. *@
+@model LancamentoFormViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Novo lançamento";
+    ViewData["Tab"] = "Financeiro";
+
+    // Data do campo no formato aaaa-mm-dd (vazio se ainda não houver).
+    var dataIso = Model.Data.HasValue ? Model.Data.Value.ToString("yyyy-MM-dd") : "";
+}
+
+<div class="db-card-head">
+    <h2>Novo lançamento</h2>
+    <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="Financeiro">← Voltar</a>
+</div>
+
+<div class="db-card">
+    @* Envia os dados para a action LancamentoNovo (POST). *@
+    <form asp-controller="Dashboard" asp-action="LancamentoNovo" method="post" class="db-form">
+        <div asp-validation-summary="ModelOnly" class="db-alert db-alert--erro db-field--full"></div>
+
+        @* Tipo: entrada ou saída. *@
+        <div class="db-field">
+            <label asp-for="Tipo"></label>
+            <select name="Tipo" class="db-select">
+                @foreach (var t in Enum.GetValues<EntryType>())
+                {
+                    <option value="@t" selected="@(Model.Tipo == t)">@t.ToLabel()</option>
+                }
+            </select>
+        </div>
+
+        @* Data do lançamento. *@
+        <div class="db-field">
+            <label asp-for="Data"></label>
+            <input type="date" name="Data" value="@dataIso" class="db-input" />
+            <span asp-validation-for="Data" class="db-error"></span>
+        </div>
+
+        @* Valor digitado como texto (ex.: 120,50). *@
+        <div class="db-field">
+            <label asp-for="Valor"></label>
+            <input asp-for="Valor" class="db-input" inputmode="decimal" placeholder="0,00" />
+            <span asp-validation-for="Valor" class="db-error"></span>
+        </div>
+
+        @* Categoria: lista separada em grupos de entrada e de saída. *@
+        <div class="db-field">
+            <label asp-for="Categoria"></label>
+            <select name="Categoria" class="db-select">
+                <option value="">— escolha —</option>
+                <optgroup label="Entradas">
+                    @foreach (var c in DashboardLists.CategoriasEntrada)
+                    {
+                        <option value="@c" selected="@(Model.Categoria == c)">@c</option>
+                    }
+                </optgroup>
+                <optgroup label="Saídas">
+                    @foreach (var c in DashboardLists.CategoriasSaida)
+                    {
+                        <option value="@c" selected="@(Model.Categoria == c)">@c</option>
+                    }
+                </optgroup>
+            </select>
+            <span asp-validation-for="Categoria" class="db-error"></span>
+        </div>
+
+        <div class="db-field db-field--full">
+            <label asp-for="Descricao"></label>
+            <input asp-for="Descricao" class="db-input" />
+            <span asp-validation-for="Descricao" class="db-error"></span>
+        </div>
+
+        <div class="db-field">
+            <label asp-for="PagadorRecebedor"></label>
+            <input asp-for="PagadorRecebedor" class="db-input" />
+        </div>
+
+        <div class="db-field">
+            <label asp-for="FormaPagamento"></label>
+            <select name="FormaPagamento" class="db-select">
+                @foreach (var f in Enum.GetValues<PaymentMethod>())
+                {
+                    <option value="@f" selected="@(Model.FormaPagamento == f)">@f.ToLabel()</option>
+                }
+            </select>
+        </div>
+
+        <div class="db-field">
+            <label asp-for="Socio"></label>
+            <select name="Socio" class="db-select">
+                @foreach (var s in DashboardLists.Socios)
+                {
+                    <option value="@s" selected="@(Model.Socio == s)">@s</option>
+                }
+            </select>
+        </div>
+
+        <div class="db-field">
+            <label asp-for="ServicoPeca"></label>
+            <input asp-for="ServicoPeca" class="db-input" />
+        </div>
+
+        <div class="db-field db-field--full">
+            <label asp-for="Observacoes"></label>
+            <input asp-for="Observacoes" class="db-input" />
+        </div>
+
+        <div class="db-field db-field--full">
+            <button type="submit" class="db-btn db-btn--primary">Salvar lançamento</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

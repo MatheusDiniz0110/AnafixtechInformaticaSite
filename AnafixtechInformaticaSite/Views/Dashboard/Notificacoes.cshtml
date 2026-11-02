@@ -1,0 +1,50 @@
+@* Aba "Notificações": avisos do sistema. Recebe um NotificacoesViewModel. *@
+@model NotificacoesViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Notificações";
+    ViewData["Tab"] = "Notificacoes";
+
+    // Função local: devolve o ícone de cada tipo de notificação.
+    string Icone(NotificationType t) => t switch
+    {
+        NotificationType.OsNew => "🧾",
+        NotificationType.Payment => "💰",
+        NotificationType.Stock => "📦",
+        NotificationType.Ticket => "🎫",
+        NotificationType.Urgent => "🚨",
+        _ => "ℹ️"
+    };
+}
+
+<div class="db-card-head">
+    <h2>Notificações</h2>
+    @* Botão que marca todas como lidas (envia para NotificacoesLidas). *@
+    <form asp-controller="Dashboard" asp-action="NotificacoesLidas" method="post">
+        <button type="submit" class="db-btn db-btn--sm">Marcar todas como lidas</button>
+    </form>
+</div>
+
+<div class="db-card">
+    @if (!Model.Notificacoes.Any())
+    {
+        <div class="db-empty">Nenhuma notificação por enquanto.</div>
+    }
+    else
+    {
+        <ul class="db-list">
+            @foreach (var n in Model.Notificacoes)
+            {
+                <li>
+                    @* Clicar abre a notificação: marca como lida e leva ao item (OS, ticket ou estoque). *@
+                    <a asp-controller="Dashboard" asp-action="NotificacaoAbrir" asp-route-id="@n.Id">
+                        <span aria-hidden="true">@Icone(n.Type)</span>
+                        @(n.IsRead ? "" : "🔵 ")<strong>@n.Title</strong>
+                        <div class="db-muted">@n.Message</div>
+                    </a>
+                    <span class="db-muted">@Fmt.Stamp(n.CreatedAt)</span>
+                </li>
+            }
+        </ul>
+    }
+</div>

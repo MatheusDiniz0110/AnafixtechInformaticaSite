@@ -1,0 +1,83 @@
+@*
+    Layout (moldura) de TODAS as telas da dashboard.
+    Ele fica "dentro" do _Layout.cshtml do site: primeiro desenha o cabeçalho e as abas da dashboard,
+    depois coloca o conteúdo de cada view no lugar do @RenderBody().
+*@
+@{
+    // Usa o layout principal do site (menu, rodapé) como moldura externa.
+    Layout = "_Layout";
+
+    // Aba atual: cada view informa a sua em ViewData["Tab"]; sem informação, assume "Index".
+    var abaAtual = ViewData["Tab"]?.ToString() ?? "Index";
+
+    // Quantidade de notificações não lidas, calculada pelo controller (OnActionExecutionAsync).
+    var naoLidas = ViewBag.NaoLidas is int n ? n : 0;
+
+    // Lista das abas: (nome da action, texto exibido, ícone).
+    var abas = new[]
+    {
+        (Acao: "Index",        Rotulo: "Visão geral",  Icone: "📊"),
+        (Acao: "Pedidos",      Rotulo: "Pedidos (OS)", Icone: "🧾"),
+        (Acao: "Agenda",       Rotulo: "Agenda",       Icone: "📅"),
+        (Acao: "Estoque",      Rotulo: "Estoque",      Icone: "📦"),
+        (Acao: "Financeiro",   Rotulo: "Financeiro",   Icone: "💰"),
+        (Acao: "Tickets",      Rotulo: "Tickets",      Icone: "🎫"),
+        (Acao: "Notificacoes", Rotulo: "Notificações", Icone: "🔔")
+    };
+}
+
+@* Passa o CSS da dashboard para a seção "Head" do _Layout (dentro do <head> da página). *@
+@section Head {
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+}
+
+@* Moldura geral da dashboard. *@
+<div class="db">
+
+    @* Cabeçalho: título à esquerda e sino de notificações à direita. *@
+    <div class="db-head">
+        <div>
+            <h1 class="db-title">Dashboard</h1>
+            <div class="db-sub">Painel administrativo — AnaFixTech Informática</div>
+        </div>
+
+        @* Sino: leva à aba de notificações e mostra o número de não lidas (se houver). *@
+        <a class="db-bell" asp-controller="Dashboard" asp-action="Notificacoes" title="Notificações">
+            🔔
+            @if (naoLidas > 0)
+            {
+                <span class="db-bell-count">@(naoLidas > 99 ? "99+" : naoLidas.ToString())</span>
+            }
+        </a>
+    </div>
+
+    @* Barra de abas: uma por seção. A aba atual recebe a classe "active" (destaque azul). *@
+    <nav class="db-tabs" aria-label="Seções da dashboard">
+        @foreach (var aba in abas)
+        {
+            <a class="db-tab @(aba.Acao == abaAtual ? "active" : "")" asp-controller="Dashboard" asp-action="@aba.Acao">
+                <span aria-hidden="true">@aba.Icone</span> @aba.Rotulo
+            </a>
+        }
+    </nav>
+
+    @* Mensagem de sucesso (verde) guardada pelo controller com TempData["Ok"]; aparece uma única vez. *@
+    @if (TempData["Ok"] is string mensagemOk)
+    {
+        <div class="db-alert db-alert--ok" role="status">@mensagemOk</div>
+    }
+
+    @* Mensagem de erro (vermelha) guardada pelo controller com TempData["Erro"]. *@
+    @if (TempData["Erro"] is string mensagemErro)
+    {
+        <div class="db-alert db-alert--erro" role="alert">@mensagemErro</div>
+    }
+
+    @* Aqui entra o conteúdo específico de cada tela (Index, Pedidos, Financeiro...). *@
+    @RenderBody()
+</div>
+
+@* Repassa a seção "Scripts" das views (ex.: validação de formulário) para o _Layout principal. *@
+@section Scripts {
+    @await RenderSectionAsync("Scripts", required: false)
+}

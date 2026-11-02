@@ -1,0 +1,95 @@
+@* Aba "Tickets": suporte aos clientes. Recebe um TicketsViewModel. *@
+@model TicketsViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Tickets";
+    ViewData["Tab"] = "Tickets";
+}
+
+<div class="db-card-head"><h2>Tickets de suporte</h2></div>
+
+@* Filtros por situação do ticket. *@
+<div class="db-chips">
+    <a class="db-chip @(Model.Status == null ? "active" : "")" asp-controller="Dashboard" asp-action="Tickets">Todos</a>
+    @foreach (var s in Enum.GetValues<TicketStatus>())
+    {
+        <a class="db-chip @(Model.Status == s ? "active" : "")" asp-controller="Dashboard" asp-action="Tickets" asp-route-status="@s">@s.ToLabel()</a>
+    }
+</div>
+
+@* Formulário expansível de novo ticket (envia para TicketNovo). *@
+<div class="db-card" style="margin-bottom:1rem">
+    <details>
+        <summary>+ Abrir ticket</summary>
+        <form asp-controller="Dashboard" asp-action="TicketNovo" method="post" class="db-form">
+            <div class="db-field"><label>Cliente</label><input name="ClientName" class="db-input" required maxlength="120" /></div>
+            <div class="db-field"><label>Telefone</label><input name="ClientPhone" class="db-input" maxlength="30" /></div>
+            <div class="db-field db-field--full"><label>Assunto</label><input name="Subject" class="db-input" required maxlength="150" /></div>
+            <div class="db-field">
+                <label>Prioridade</label>
+                <select name="Priority" class="db-select">
+                    @foreach (var p in Enum.GetValues<TicketPriority>())
+                    {
+                        <option value="@p" selected="@(p == TicketPriority.Medium)">@p.ToLabel()</option>
+                    }
+                </select>
+            </div>
+            <div class="db-field"><label>Responsável</label><input name="AssignedTo" class="db-input" maxlength="80" /></div>
+            <div class="db-field db-field--full"><label>Descrição</label><textarea name="Description" class="db-textarea" maxlength="2000"></textarea></div>
+            <div class="db-field"><button type="submit" class="db-btn db-btn--primary">Abrir ticket</button></div>
+        </form>
+    </details>
+</div>
+
+@* Tabela de tickets. *@
+<div class="db-table-wrap">
+    <table class="db-table">
+        <thead><tr><th>Aberto em</th><th>Cliente</th><th>Assunto</th><th>Prioridade</th><th>Status</th><th>Responsável</th><th>Atualizar</th></tr></thead>
+        <tbody>
+            @foreach (var t in Model.Tickets)
+            {
+                <tr>
+                    <td>@Fmt.Stamp(t.CreatedAt)</td>
+                    <td>@t.ClientName<div class="db-muted">@t.ClientPhone</div></td>
+                    <td>
+                        <strong>@t.Subject</strong>
+                        @if (!string.IsNullOrWhiteSpace(t.Description))
+                        {
+                            <div class="db-muted">@t.Description</div>
+                        }
+                        @* Histórico de contatos, escondido até o clique. *@
+                        @if (!string.IsNullOrWhiteSpace(t.CommunicationLog))
+                        {
+                            <details><summary>Histórico de contato</summary><div class="db-muted" style="white-space:pre-wrap">@t.CommunicationLog</div></details>
+                        }
+                    </td>
+                    <td><span class="db-badge db-badge--@t.Priority.ToBadge()">@t.Priority.ToLabel()</span></td>
+                    <td><span class="db-badge db-badge--@t.Status.ToBadge()">@t.Status.ToLabel()</span></td>
+                    <td>@(t.AssignedTo ?? "—")</td>
+                    <td>
+                        @* Atualiza status, responsável e acrescenta uma nota ao histórico (envia para TicketAlterarStatus). *@
+                        <details>
+                            <summary>Atualizar</summary>
+                            <form asp-controller="Dashboard" asp-action="TicketAlterarStatus" method="post" class="db-details-body">
+                                <input type="hidden" name="id" value="@t.Id" />
+                                <select name="status" class="db-select">
+                                    @foreach (var s in Enum.GetValues<TicketStatus>())
+                                    {
+                                        <option value="@s" selected="@(t.Status == s)">@s.ToLabel()</option>
+                                    }
+                                </select>
+                                <input name="assignedTo" value="@t.AssignedTo" class="db-input" placeholder="Responsável" maxlength="80" />
+                                <input name="nota" class="db-input" placeholder="Nota do contato (opcional)" maxlength="500" />
+                                <button type="submit" class="db-btn db-btn--primary db-btn--sm">Salvar</button>
+                            </form>
+                        </details>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Tickets.Any())
+            {
+                <tr><td colspan="7" class="db-empty">Nenhum ticket encontrado.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
