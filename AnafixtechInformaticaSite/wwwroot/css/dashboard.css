@@ -1,0 +1,573 @@
+﻿/* =====================================================================
+   Dashboard AnaFixTech — estilos de todas as telas do painel.
+   Usa as variáveis de cor do site.css (--bg-elevado, --borda, --azul...), com valores de reserva.
+   Todas as classes começam com "db-" para não interferir no resto do site.
+   ===================================================================== */
+
+/* Variáveis locais: apelidos curtos para as cores do tema (com reserva caso a variável não exista). */
+.db {
+    --d-card: var(--bg-elevado, #0b0f1a); /* fundo dos cartões */
+    --d-input: var(--bg-input, #10141f); /* fundo de campos e cabeçalhos de tabela */
+    --d-border: var(--borda, #1f2937); /* cor das bordas */
+    --d-text: var(--texto-principal, #e5e7eb);
+    --d-muted: var(--texto-suave, #94a3b8);
+    --d-faint: var(--texto-fraco, #64748b);
+    --d-blue: var(--azul, #2563eb);
+    --d-accent: var(--azul-claro, #60a5fa);
+    max-width: 1240px; /* largura máxima do painel */
+    margin: 0 auto;
+    padding: 1rem 0 3rem;
+    color: var(--d-text);
+    line-height: 1.55;
+}
+
+    .db *, .db *::before, .db *::after {
+        box-sizing: border-box;
+    }
+    /* padroniza o cálculo de larguras */
+    .db a {
+        color: var(--d-accent);
+        text-decoration: none;
+    }
+
+        .db a:hover {
+            text-decoration: underline;
+        }
+
+    .db h1, .db h2, .db h3 {
+        color: #fff;
+        margin: 0;
+        line-height: 1.25;
+    }
+
+/* ---------- Cabeçalho e sino ---------- */
+.db-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.db-title {
+    font-size: 1.7rem;
+    font-weight: 800;
+}
+
+.db-sub {
+    color: var(--d-muted);
+    font-size: .92rem;
+}
+
+.db-bell {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    font-size: 1.2rem;
+    border-radius: 12px;
+    background: var(--d-card);
+    border: 1px solid var(--d-border);
+}
+
+    .db-bell:hover {
+        text-decoration: none;
+        border-color: var(--d-accent);
+    }
+
+.db-bell-count {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    display: grid;
+    place-items: center;
+    font-size: .7rem;
+    font-weight: 700;
+    color: #fff;
+    background: #dc2626;
+    border-radius: 999px;
+}
+
+/* ---------- Abas ---------- */
+.db-tabs {
+    display: flex;
+    gap: .4rem;
+    overflow-x: auto;
+    padding-bottom: .6rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--d-border);
+}
+
+.db-tab {
+    flex: 0 0 auto;
+    padding: .5rem 1rem;
+    font-size: .9rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--d-muted) !important;
+    background: var(--d-card);
+    border: 1px solid var(--d-border);
+    border-radius: 999px;
+}
+
+    .db-tab:hover {
+        color: #fff !important;
+        text-decoration: none;
+        border-color: #334155;
+    }
+
+    .db-tab.active {
+        color: #fff !important;
+        background: var(--d-blue);
+        border-color: var(--d-blue);
+    }
+
+/* ---------- Faixas de mensagem ---------- */
+.db-alert {
+    margin-bottom: 1rem;
+    padding: .8rem 1rem;
+    border-radius: 12px;
+    border: 1px solid;
+    font-size: .95rem;
+}
+
+.db-alert--ok {
+    color: #34d399;
+    background: rgba(16, 185, 129, .1);
+    border-color: rgba(16, 185, 129, .35);
+}
+
+.db-alert--erro {
+    color: #fca5a5;
+    background: rgba(220, 38, 38, .1);
+    border-color: rgba(220, 38, 38, .35);
+}
+
+/* ---------- Grades e cartões ---------- */
+.db-grid {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.db-grid--4 {
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.db-grid--2 {
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+}
+
+.db-card {
+    padding: 1.2rem 1.3rem;
+    background: var(--d-card);
+    border: 1px solid var(--d-border);
+    border-radius: 16px;
+}
+
+    .db-card > h2 {
+        margin-bottom: .9rem;
+        font-size: 1rem;
+    }
+
+.db-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: .9rem;
+}
+
+    .db-card-head h2 {
+        font-size: 1rem;
+    }
+
+/* ---------- Indicadores (KPIs) ---------- */
+.db-kpi {
+    display: block;
+    padding: 1.1rem 1.2rem;
+    background: var(--d-card);
+    border: 1px solid var(--d-border);
+    border-radius: 16px;
+    color: var(--d-text) !important;
+}
+
+a.db-kpi:hover {
+    text-decoration: none;
+    border-color: var(--d-accent);
+}
+
+.db-kpi-label {
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--d-muted);
+}
+
+.db-kpi-value {
+    margin-top: .3rem;
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.db-kpi-hint {
+    font-size: .8rem;
+    color: var(--d-faint);
+}
+
+.db-pos {
+    color: #34d399 !important;
+}
+/* valor positivo (verde) */
+.db-neg {
+    color: #f87171 !important;
+}
+/* valor negativo (vermelho) */
+
+/* ---------- Selos (badges) ---------- */
+.db-badge {
+    display: inline-block;
+    padding: .15rem .6rem;
+    font-size: .72rem;
+    font-weight: 700;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.db-badge--amber {
+    color: #fbbf24;
+    background: rgba(245, 158, 11, .15);
+}
+
+.db-badge--blue {
+    color: #60a5fa;
+    background: rgba(59, 130, 246, .15);
+}
+
+.db-badge--green {
+    color: #34d399;
+    background: rgba(16, 185, 129, .15);
+}
+
+.db-badge--red {
+    color: #f87171;
+    background: rgba(239, 68, 68, .15);
+}
+
+.db-badge--purple {
+    color: #c084fc;
+    background: rgba(168, 85, 247, .15);
+}
+
+.db-badge--cyan {
+    color: #22d3ee;
+    background: rgba(6, 182, 212, .15);
+}
+
+.db-badge--gray {
+    color: #94a3b8;
+    background: rgba(148, 163, 184, .15);
+}
+
+/* ---------- Tabelas ---------- */
+.db-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--d-border);
+    border-radius: 14px;
+    background: var(--d-card);
+}
+
+.db-table {
+    width: 100%;
+    min-width: 640px;
+    border-collapse: collapse;
+    font-size: .9rem;
+}
+
+    .db-table th, .db-table td {
+        padding: .7rem .9rem;
+        text-align: left;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--d-border);
+    }
+
+    .db-table th {
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--d-muted);
+        background: var(--d-input);
+    }
+
+    .db-table tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .db-table tbody tr:hover td {
+        background: rgba(148, 163, 184, .05);
+    }
+
+.db-num {
+    text-align: right !important;
+    white-space: nowrap;
+}
+/* colunas numéricas alinhadas à direita */
+.db-muted {
+    color: var(--d-muted);
+    font-size: .85rem;
+}
+
+/* ---------- Formulários ---------- */
+.db-form {
+    display: grid;
+    gap: .8rem;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    align-items: end;
+}
+
+.db-field {
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+}
+
+.db-field--full {
+    grid-column: 1 / -1;
+}
+
+.db-field label {
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--d-muted);
+}
+
+.db-input, .db-select, .db-textarea {
+    width: 100%;
+    padding: .55rem .75rem;
+    font: inherit;
+    font-size: .92rem;
+    color: var(--d-text);
+    background: var(--d-input);
+    border: 1px solid var(--d-border);
+    border-radius: 10px;
+}
+
+.db-textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+    .db-input:focus, .db-select:focus, .db-textarea:focus {
+        outline: 2px solid var(--d-accent);
+        outline-offset: 1px;
+    }
+
+.db-error {
+    font-size: .8rem;
+    color: #f87171;
+}
+
+.db-check {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .9rem;
+}
+
+.db-inline {
+    display: inline-flex;
+    gap: .4rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 0;
+}
+
+/* ---------- Botões ---------- */
+.db-btn {
+    display: inline-block;
+    padding: .55rem 1.1rem;
+    font: inherit;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: #fff !important;
+    background: #1e293b;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    text-decoration: none;
+}
+
+    .db-btn:hover {
+        text-decoration: none;
+        background: #334155;
+    }
+
+.db-btn--primary {
+    background: var(--d-blue);
+}
+
+    .db-btn--primary:hover {
+        background: #1d4ed8;
+    }
+
+.db-btn--danger {
+    background: rgba(220, 38, 38, .15);
+    color: #f87171 !important;
+    border-color: rgba(220, 38, 38, .35);
+}
+
+    .db-btn--danger:hover {
+        background: rgba(220, 38, 38, .3);
+    }
+
+.db-btn--sm {
+    padding: .3rem .7rem;
+    font-size: .8rem;
+}
+
+/* ---------- Filtros em "pílulas" ---------- */
+.db-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    margin-bottom: 1rem;
+}
+
+.db-chip {
+    padding: .3rem .85rem;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--d-muted) !important;
+    background: var(--d-card);
+    border: 1px solid var(--d-border);
+    border-radius: 999px;
+}
+
+    .db-chip:hover {
+        text-decoration: none;
+        border-color: #334155;
+        color: #fff !important;
+    }
+
+    .db-chip.active {
+        color: #fff !important;
+        background: var(--d-blue);
+        border-color: var(--d-blue);
+    }
+
+/* ---------- Barras de status (visão geral) ---------- */
+.db-bar-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 36px;
+    align-items: center;
+    gap: .6rem;
+    margin-bottom: .55rem;
+    font-size: .85rem;
+}
+
+.db-bar {
+    height: 10px;
+    background: var(--d-input);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.db-bar-fill {
+    height: 100%;
+    background: var(--d-blue);
+    border-radius: 999px;
+}
+
+/* ---------- Listas ---------- */
+.db-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+    .db-list li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: .75rem;
+        padding: .55rem 0;
+        border-bottom: 1px solid var(--d-border);
+        font-size: .9rem;
+    }
+
+        .db-list li:last-child {
+            border-bottom: 0;
+        }
+
+.db-empty {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--d-faint);
+    font-size: .92rem;
+}
+
+/* ---------- Blocos expansíveis ---------- */
+.db details > summary {
+    cursor: pointer;
+    color: var(--d-accent);
+    font-size: .85rem;
+    font-weight: 600;
+    list-style: none;
+}
+
+    .db details > summary::-webkit-details-marker {
+        display: none;
+    }
+
+.db details[open] > summary {
+    margin-bottom: .6rem;
+}
+
+.db-details-body {
+    display: grid;
+    gap: .6rem;
+    min-width: 260px;
+}
+
+/* ---------- Informações em duas colunas (dl) ---------- */
+.db-dl {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: .4rem .8rem;
+    margin: 0;
+    font-size: .92rem;
+}
+
+    .db-dl dt {
+        color: var(--d-muted);
+        font-weight: 600;
+    }
+
+    .db-dl dd {
+        margin: 0;
+        word-break: break-word;
+    }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 640px) {
+    .db-grid--2 {
+        grid-template-columns: 1fr;
+    }
+
+    .db-bar-row {
+        grid-template-columns: 90px 1fr 30px;
+    }
+
+    .db-dl {
+        grid-template-columns: 1fr;
+    }
+}

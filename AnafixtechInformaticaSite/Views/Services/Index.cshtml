@@ -1,51 +1,114 @@
-﻿@model List<AnafixtechInformaticaSite.Models.Service>
+﻿@*
+    View do ServicesController (action Index): catálogo de serviços.
+    Recebe a lista de serviços do banco (List<Service>) e monta: busca, filtros por categoria e os cartões.
+*@
+@model List<AnafixtechInformaticaSite.Models.Service>
 @{
+    // Título da página (aparece na aba do navegador).
     ViewData["Title"] = "Nossos Serviços";
 
-    // Gera as abas de filtro a partir das categorias que existem no banco
-    var categorias = Model.Select(s => s.Class).Distinct().OrderBy(c => c).ToList();
+    // Função local: diz se um serviço deve aparecer no catálogo.
+    // Só esconde os que estiverem marcados como inativos no campo Status; qualquer outro valor (ou vazio) aparece.
+    // Se você usar outras palavras para "inativo", acrescente-as nesta lista.
+    bool Ativo(Service s)
+    {
+        var status = (s.Status ?? "").Trim().ToLowerInvariant();                        // texto do status em minúsculas
+        var inativos = new[] { "inativo", "inactive", "indisponivel", "indisponível", "desativado", "oculto" };
+        return !inativos.Contains(status);                                               // aparece se NÃO estiver na lista
+    }
 
+    // Serviços que serão exibidos: só os ativos, ordenados por categoria e depois por título.
+    var servicos = Model.Where(Ativo).OrderBy(s => s.Class).ThenBy(s => s.Title).ToList();
+
+    // Categorias que realmente existem entre os serviços exibidos (geram os botões de filtro).
+    var categorias = servicos.Select(s => s.Class).Distinct().OrderBy(c => c).ToList();
+
+    // Função local: devolve a classe CSS (cor do selo) de cada categoria.
     string BadgeClass(string categoria) => categoria switch
     {
         "Software" => "badge-software",
         "Dados" => "badge-dados",
         "Hardware" => "badge-hardware",
         "Redes" => "badge-redes",
-        _ => "badge-outros"
+        _ => "badge-outros"   // qualquer outra categoria usa a cor neutra
     };
+
+    // Função local: monta o link do WhatsApp com a mensagem já pronta para o serviço escolhido.
+    // (Quando o formulário de pedido existir no site, troque este link por um link para ele.)
+    string LinkWhatsApp(Service s)
+    {
+        var preco = s.Price > 0 ? Fmt.Money(s.Price) : "sob consulta";                    // preço em texto
+        var texto = $"Olá! Tenho interesse no serviço: {s.Title} ({preco}).";            // mensagem pré-escrita
+        return "https://wa.me/5562998877833?text=" + Uri.EscapeDataString(texto);        // número da empresa + texto codificado
+    }
 }
-<head>
-    <link rel="stylesheet" href="~/css/styleServices.css" />
-</head>
+
+@* Envia o CSS da página para a seção "Head" do _Layout (dentro do <head>), em vez de colocar <head> no meio do corpo. *@
+@section Head {
+    <meta name="description" content="Catálogo de serviços da AnaFixTech Informática: manutenção, recuperação de dados, redes, backup, software e mais." />
+    <link rel="stylesheet" href="~/css/styleServices.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/servicesExtra.css" asp-append-version="true" />
+}
+
+@* Painel escuro que envolve toda a página. *@
 <div class="services-page">
+
+    @* ===== Cabeçalho da página ===== *@
     <div class="services-header">
         <span class="services-eyebrow">CATÁLOGO</span>
         <h1 class="services-title">Nossos Serviços</h1>
         <p class="services-subtitle">
-            Confira todos os serviços que oferecemos. Selecione o que você precisa e faça sua solicitação.
+            Confira todos os serviços que oferecemos. Escolha o que você precisa e solicite pelo WhatsApp.
         </p>
     </div>
 
-    <div class="services-tabs" id="filtro-tabs">
-        <button type="button" class="tab-btn active" data-filtro="Todos">Todos</button>
-        @foreach (var categoria in categorias)
-        {
-            <button type="button" class="tab-btn" data-filtro="@categoria">@categoria</button>
-        }
-    </div>
-
-    @if (!Model.Any())
+    @* Se não há nenhum serviço ativo, mostra só uma mensagem e encerra aqui. *@
+    @if (!servicos.Any())
     {
-        <p class="text-center text-muted mt-5">Nenhum serviço cadastrado no momento.</p>
+        <p class="services-empty">Nenhum serviço cadastrado no momento.</p>
     }
     else
     {
-        <div class="services-grid" id="services-grid">
-            @foreach (var service in Model)
+        @* ===== Barra de busca ===== *@
+        <div class="services-search">
+            <label for="busca-servicos" class="services-search-label">Buscar serviço</label>
+            <input id="busca-servicos" type="search" class="services-search-input" placeholder="Ex.: formatação, SSD, rede, backup…" autocomplete="off" />
+        </div>
+
+        @* ===== Filtros por categoria (botões) ===== *@
+        <div class="services-tabs" id="filtro-tabs" role="group" aria-label="Filtrar por categoria">
+            @* Botão "Todos": começa marcado e mostra o total de serviços. *@
+            <button type="button" class="tab-btn active" data-filtro="Todos" aria-pressed="true">
+                Todos <span class="tab-count">@servicos.Count</span>
+            </button>
+
+            @* Um botão para cada categoria, com a quantidade de serviços dela. *@
+            @foreach (var categoria in categorias)
             {
-                <div class="service-card" data-categoria="@service.Class">
+                <button type="button" class="tab-btn" data-filtro="@categoria" aria-pressed="false">
+                    @categoria <span class="tab-count">@servicos.Count(s => s.Class == categoria)</span>
+                </button>
+            }
+        </div>
+
+        @* Linha com o resultado atual do filtro (ex.: "12 serviços"), atualizada pelo JavaScript. *@
+        <p class="services-result" id="resultado-servicos" aria-live="polite">@servicos.Count serviços</p>
+
+        @* ===== Grade de cartões ===== *@
+        <div class="services-grid" id="services-grid" role="list">
+            @foreach (var service in servicos)
+            {
+                @*
+                    data-categoria: usada pelo filtro de categoria.
+                    data-busca: título + descrição + categoria em minúsculas, usada pela busca por texto.
+                *@
+                <div class="service-card" role="listitem"
+                     data-categoria="@service.Class"
+                     data-busca="@((service.Title + " " + service.Description + " " + service.Class).ToLowerInvariant())">
+
+                    @* Topo do cartão: ícone à esquerda e selo da categoria à direita. *@
                     <div class="service-card-top">
-                        <div class="service-icone">
+                        <div class="service-icone" aria-hidden="true">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
                                 <circle cx="12" cy="12" r="3" />
@@ -54,40 +117,99 @@
                         <span class="badge-categoria @BadgeClass(service.Class)">@service.Class</span>
                     </div>
 
+                    @* Nome e descrição do serviço. *@
                     <h3 class="service-nome">@service.Title</h3>
                     <p class="service-descricao">@service.Description</p>
 
+                    @* Preço em reais (formato brasileiro). Preço zero vira "Sob consulta". *@
                     <p class="service-preco">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <line x1="12" x2="12" y1="1" y2="23" />
                             <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                         </svg>
-                        R$ @service.Price.ToString()
+                        @(service.Price > 0 ? Fmt.Money(service.Price) : "Sob consulta")
                     </p>
+
+                    @* Botão que abre o WhatsApp com a mensagem do serviço (abre em nova aba). *@
+                    <a class="btn-solicitar" href="@LinkWhatsApp(service)" target="_blank" rel="noopener noreferrer">
+                        Solicitar este serviço
+                    </a>
                 </div>
             }
         </div>
+
+        @* Mensagem mostrada pelo JavaScript quando a busca/filtro não encontra nada (começa escondida). *@
+        <p class="services-empty" id="sem-resultados" hidden>
+            Nenhum serviço encontrado. Tente outra palavra ou escolha "Todos".
+        </p>
     }
 </div>
 
+@* ===== JavaScript do filtro e da busca (só roda se existir catálogo na página) ===== *@
 @section Scripts {
     <script>
         (function () {
+            // Pega os elementos da página: botões de categoria, cartões, campo de busca e textos de resultado.
             const botoes = document.querySelectorAll('#filtro-tabs .tab-btn');
             const cards = document.querySelectorAll('#services-grid .service-card');
+            const campoBusca = document.getElementById('busca-servicos');
+            const resultado = document.getElementById('resultado-servicos');
+            const semResultados = document.getElementById('sem-resultados');
 
+            // Se a página não tem catálogo (lista vazia), não há nada a fazer.
+            if (!campoBusca || cards.length === 0) { return; }
+
+            // Estado atual dos filtros.
+            let categoriaAtual = 'Todos';
+            let termoAtual = '';
+
+            // Remove acentos e põe em minúsculas, para "formatacao" achar "Formatação".
+            function normalizar(texto) {
+                return texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            }
+
+            // Mostra/esconde cada cartão conforme a categoria escolhida e o texto digitado.
+            function aplicarFiltros() {
+                let visiveis = 0;
+                cards.forEach(function (card) {
+                    const daCategoria = categoriaAtual === 'Todos' || card.dataset.categoria === categoriaAtual;
+                    const doTexto = termoAtual === '' || normalizar(card.dataset.busca).includes(termoAtual);
+                    const mostrar = daCategoria && doTexto;
+                    card.hidden = !mostrar;          // atributo "hidden" esconde o cartão
+                    if (mostrar) { visiveis++; }     // conta quantos continuam visíveis
+                });
+
+                // Atualiza a frase "N serviço(s)" e a mensagem de "nenhum resultado".
+                resultado.textContent = visiveis + (visiveis === 1 ? ' serviço' : ' serviços');
+                semResultados.hidden = visiveis !== 0;
+            }
+
+            // Clique em um botão de categoria: marca o botão e refaz o filtro.
             botoes.forEach(function (botao) {
                 botao.addEventListener('click', function () {
-                    botoes.forEach(function (b) { b.classList.remove('active'); });
-                    botao.classList.add('active');
-
-                    const filtro = botao.dataset.filtro;
-                    cards.forEach(function (card) {
-                        const mostrar = filtro === 'Todos' || card.dataset.categoria === filtro;
-                        card.style.display = mostrar ? '' : 'none';
+                    botoes.forEach(function (b) {
+                        b.classList.remove('active');
+                        b.setAttribute('aria-pressed', 'false');
                     });
+                    botao.classList.add('active');
+                    botao.setAttribute('aria-pressed', 'true');
+                    categoriaAtual = botao.dataset.filtro;
+                    aplicarFiltros();
                 });
             });
+
+            // Digitação no campo de busca: guarda o texto normalizado e refaz o filtro.
+            campoBusca.addEventListener('input', function () {
+                termoAtual = normalizar(campoBusca.value.trim());
+                aplicarFiltros();
+            });
+
+            // Atalho: /Services?categoria=Hardware já abre o catálogo filtrado.
+            const inicial = new URLSearchParams(window.location.search).get('categoria');
+            if (inicial) {
+                const alvo = Array.from(botoes).find(function (b) { return b.dataset.filtro === inicial; });
+                if (alvo) { alvo.click(); }
+            }
         })();
     </script>
 }

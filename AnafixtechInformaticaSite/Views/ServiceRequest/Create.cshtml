@@ -1,0 +1,120 @@
+@*
+    Formulário PÚBLICO de solicitação de serviço.
+    Recebe um ServiceRequestFormViewModel com os campos vazios (ou já preenchidos,
+    quando a pessoa está logada) e a lista de serviços do catálogo.
+*@
+@model ServiceRequestFormViewModel
+@{
+    ViewData["Title"] = "Solicitar serviço";
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/serviceRequest.css" asp-append-version="true" />
+}
+
+<div class="sr-page">
+
+    @* ===== Cabeçalho da página ===== *@
+    <div class="sr-header">
+        <span class="sr-eyebrow">ATENDIMENTO</span>
+        <h1 class="sr-title">Solicitar serviço</h1>
+        <p class="sr-subtitle">
+            Conte o que está acontecendo com o seu equipamento. A equipe da AnaFixTech analisa
+            o pedido e entra em contato com o orçamento.
+        </p>
+    </div>
+
+    <div class="sr-card">
+        @* O formulário envia os dados para a action Create do ServiceRequestController. *@
+        <form asp-controller="ServiceRequest" asp-action="Create" method="post" class="sr-form">
+
+            @* Erros gerais (os erros de cada campo aparecem logo abaixo dele). *@
+            <div asp-validation-summary="ModelOnly" class="sr-alert"></div>
+
+            @* ---------- Dados de contato ---------- *@
+            <h2 class="sr-section">Seus dados</h2>
+
+            <div class="sr-grid">
+                <div class="sr-field">
+                    <label asp-for="ContactName"></label>
+                    <input asp-for="ContactName" class="sr-input" autocomplete="name" placeholder="Seu nome completo" />
+                    <span asp-validation-for="ContactName" class="sr-error"></span>
+                </div>
+
+                <div class="sr-field">
+                    <label asp-for="ContactPhone"></label>
+                    <input asp-for="ContactPhone" class="sr-input" autocomplete="tel" placeholder="(62) 99999-9999" />
+                    <span asp-validation-for="ContactPhone" class="sr-error"></span>
+                </div>
+
+                <div class="sr-field sr-field--full">
+                    <label asp-for="ContactEmail"></label>
+                    <input asp-for="ContactEmail" class="sr-input" autocomplete="email" placeholder="voce@exemplo.com" />
+                    <span asp-validation-for="ContactEmail" class="sr-error"></span>
+                </div>
+
+                <div class="sr-field sr-field--full">
+                    <label asp-for="ContactAddress"></label>
+                    <input asp-for="ContactAddress" class="sr-input" autocomplete="street-address" placeholder="Preencha se quiser que a gente busque o equipamento" />
+                    <span asp-validation-for="ContactAddress" class="sr-error"></span>
+                </div>
+            </div>
+
+            <label class="sr-check">
+                <input asp-for="PickupRequested" />
+                Buscar o equipamento no meu endereço
+            </label>
+
+            @* ---------- Equipamento e problema ---------- *@
+            <h2 class="sr-section">Equipamento e problema</h2>
+
+            <div class="sr-grid">
+                <div class="sr-field">
+                    <label asp-for="Device"></label>
+                    <input asp-for="Device" class="sr-input" placeholder="Ex.: Notebook Dell Inspiron" />
+                    <span asp-validation-for="Device" class="sr-error"></span>
+                </div>
+
+                <div class="sr-field">
+                    <label asp-for="ServiceId"></label>
+                    <select asp-for="ServiceId" class="sr-input">
+                        <option value="">— Não sei / outro serviço —</option>
+                        @foreach (var servico in Model.Servicos)
+                        {
+                            <option value="@servico.Id">
+                                @servico.Title — @(servico.Price > 0 ? Fmt.Money(servico.Price) : "sob consulta")
+                            </option>
+                        }
+                    </select>
+                    <span asp-validation-for="ServiceId" class="sr-error"></span>
+                </div>
+
+                <div class="sr-field sr-field--full">
+                    <label asp-for="Description"></label>
+                    <textarea asp-for="Description" class="sr-input sr-textarea" rows="5"
+                              placeholder="Ex.: o notebook liga, mas a tela fica preta depois de alguns minutos."></textarea>
+                    <span asp-validation-for="Description" class="sr-error"></span>
+                </div>
+            </div>
+
+            @* ---------- Privacidade e envio ---------- *@
+            <label class="sr-check sr-check--terms">
+                <input asp-for="AcceptPrivacy" />
+                Autorizo o contato e o uso destes dados para o atendimento da minha solicitação.
+            </label>
+            <span asp-validation-for="AcceptPrivacy" class="sr-error"></span>
+
+            <button type="submit" class="sr-btn">Enviar solicitação</button>
+
+            <p class="sr-note">
+                Ao enviar, você recebe um número de protocolo para acompanhar o atendimento.
+                Seus dados não são compartilhados com terceiros.
+            </p>
+        </form>
+    </div>
+</div>
+
+@* Validação no navegador: mostra as mensagens antes mesmo de enviar ao servidor. *@
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

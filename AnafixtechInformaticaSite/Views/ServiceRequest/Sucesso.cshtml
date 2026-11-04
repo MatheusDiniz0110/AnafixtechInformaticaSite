@@ -1,0 +1,49 @@
+@*
+    Confirmação exibida depois que o cliente envia a solicitação.
+    O protocolo e o nome chegam pelo ViewBag, vindos da action Sucesso.
+*@
+@{
+    ViewData["Title"] = "Solicitação enviada";
+    var protocolo = ViewBag.Protocolo as string ?? "";
+    var nome = ViewBag.NomeSolicitante as string;
+
+    // Mensagem pronta para o cliente continuar a conversa no WhatsApp.
+    var textoWhatsApp = Uri.EscapeDataString($"Olá! Acabei de enviar a solicitação {protocolo} pelo site da AnaFixTech.");
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/serviceRequest.css" asp-append-version="true" />
+}
+
+<div class="sr-page">
+    <div class="sr-card sr-success">
+        <div class="sr-success-icon" aria-hidden="true">✓</div>
+
+        <h1 class="sr-title">Solicitação enviada!</h1>
+
+        <p class="sr-subtitle">
+            Obrigado@(string.IsNullOrWhiteSpace(nome) ? "" : $", {nome}")! Recebemos o seu pedido
+            e a equipe da AnaFixTech vai analisar e entrar em contato.
+        </p>
+
+        @* Protocolo: o cliente deve guardar para referência. *@
+        <div class="sr-protocol">
+            <span>Seu protocolo</span>
+            <strong>@protocolo</strong>
+        </div>
+
+        <p class="sr-note">
+            Guarde este número. Ele identifica a sua solicitação em qualquer contato
+            pelo WhatsApp, telefone ou e-mail.
+        </p>
+
+        <div class="sr-actions">
+            <a class="sr-btn" href="https://wa.me/5562998877833?text=@textoWhatsApp" target="_blank" rel="noopener noreferrer">
+                Falar no WhatsApp
+            </a>
+            <a class="sr-btn sr-btn--ghost" asp-controller="Home" asp-action="Index">
+                Voltar ao início
+            </a>
+        </div>
+    </div>
+</div>

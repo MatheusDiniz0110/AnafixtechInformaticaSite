@@ -397,6 +397,84 @@ namespace AnafixtechInformaticaSite.Migrations
                     b.ToTable("ServiceOrders");
                 });
 
+            modelBuilder.Entity("AnafixtechInformaticaSite.Models.ServiceRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly?>("CompletionDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("ContactAddress")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("ContactEmail")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<string>("ContactName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("ContactPhone")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Device")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("InternalNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool>("PickupRequested")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal?>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("RequestDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ServiceId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ServiceOrderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServiceId");
+
+                    b.HasIndex("ServiceOrderId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ServiceRequests");
+                });
+
             modelBuilder.Entity("AnafixtechInformaticaSite.Models.StatusHistoryEntry", b =>
                 {
                     b.Property<int>("Id")
@@ -615,6 +693,27 @@ namespace AnafixtechInformaticaSite.Migrations
                     b.Navigation("Service");
 
                     b.Navigation("StockItem");
+                });
+
+            modelBuilder.Entity("AnafixtechInformaticaSite.Models.ServiceRequest", b =>
+                {
+                    b.HasOne("AnafixtechInformaticaSite.Models.Service", "Service")
+                        .WithMany()
+                        .HasForeignKey("ServiceId");
+
+                    b.HasOne("AnafixtechInformaticaSite.Models.ServiceOrder", "ServiceOrder")
+                        .WithMany()
+                        .HasForeignKey("ServiceOrderId");
+
+                    b.HasOne("AnafixtechInformaticaSite.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("Service");
+
+                    b.Navigation("ServiceOrder");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AnafixtechInformaticaSite.Models.StatusHistoryEntry", b =>

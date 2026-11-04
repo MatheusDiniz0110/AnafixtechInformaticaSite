@@ -1,0 +1,264 @@
+/* =====================================================================
+   Estilos das telas públicas de solicitação de serviço.
+   Usa as variáveis de cor do site.css, com valores de reserva.
+   ===================================================================== */
+
+.sr-page {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+    color: var(--texto-principal, #e5e7eb);
+}
+
+/* ---------- Cabeçalho ---------- */
+.sr-header {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.sr-eyebrow {
+    color: var(--azul-claro, #60a5fa);
+    font-weight: 700;
+    letter-spacing: .12em;
+    font-size: .78rem;
+}
+
+.sr-title {
+    font-size: clamp(2rem, 4vw, 2.6rem);
+    font-weight: 800;
+    color: #fff;
+    margin: 10px 0 14px;
+}
+
+.sr-subtitle {
+    color: var(--texto-suave, #94a3b8);
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* ---------- Cartão e formulário ---------- */
+.sr-card {
+    background: var(--bg-elevado, #0b0f1a);
+    border: 1px solid var(--borda, #1f2937);
+    border-radius: 18px;
+    padding: 28px;
+}
+
+.sr-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sr-section {
+    font-size: 1.05rem;
+    color: #fff;
+    margin: 18px 0 6px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--borda, #1f2937);
+}
+
+.sr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.sr-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sr-field--full {
+    grid-column: 1 / -1;
+}
+
+.sr-field label {
+    color: var(--texto-suave, #94a3b8);
+    font-size: .85rem;
+    font-weight: 600;
+}
+
+.sr-input {
+    width: 100%;
+    background: var(--bg-input, #10141f);
+    border: 1px solid var(--borda, #1f2937);
+    border-radius: 10px;
+    color: #fff;
+    padding: 12px 14px;
+    font: inherit;
+}
+
+    .sr-input:focus {
+        outline: none;
+        border-color: var(--azul, #2563eb);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .18);
+    }
+
+    .sr-input::placeholder {
+        color: var(--texto-fraco, #64748b);
+    }
+
+.sr-textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* ---------- Caixas de seleção ---------- */
+.sr-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: var(--texto-suave, #94a3b8);
+    font-size: .9rem;
+    margin: 10px 0 4px;
+    line-height: 1.45;
+}
+
+    .sr-check input {
+        width: 18px;
+        height: 18px;
+        margin-top: 2px;
+        accent-color: #2563eb;
+        flex: 0 0 auto;
+    }
+
+.sr-check--terms {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--borda, #1f2937);
+}
+
+/* ---------- Mensagens e botões ---------- */
+.sr-error {
+    color: #f87171;
+    font-size: .8rem;
+    min-height: 1em;
+}
+
+.sr-alert {
+    color: #fecaca;
+    background: rgba(220, 38, 38, .12);
+    border: 1px solid rgba(220, 38, 38, .4);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: .9rem;
+}
+
+    .sr-alert:empty {
+        display: none;
+    }
+
+.sr-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--azul, #2563eb);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 22px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background .15s ease;
+}
+
+    .sr-btn:hover {
+        background: #1d4ed8;
+        color: #fff;
+        text-decoration: none;
+    }
+
+.sr-btn--ghost {
+    background: transparent;
+    border: 1px solid var(--borda, #1f2937);
+    color: var(--texto-suave, #94a3b8);
+}
+
+    .sr-btn--ghost:hover {
+        background: var(--bg-input, #10141f);
+        color: #fff;
+    }
+
+.sr-form > .sr-btn {
+    margin-top: 18px;
+    align-self: flex-start;
+}
+
+.sr-note {
+    color: var(--texto-fraco, #64748b);
+    font-size: .82rem;
+    line-height: 1.5;
+    margin-top: 10px;
+}
+
+/* ---------- Tela de sucesso ---------- */
+.sr-success {
+    text-align: center;
+}
+
+.sr-success-icon {
+    width: 64px;
+    height: 64px;
+    margin: 4px auto 18px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: rgba(34, 197, 94, .15);
+    color: #4ade80;
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.sr-protocol {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 320px;
+    margin: 24px auto;
+    padding: 18px;
+    background: var(--bg-input, #10141f);
+    border: 1px dashed var(--azul, #2563eb);
+    border-radius: 14px;
+}
+
+    .sr-protocol span {
+        color: var(--texto-fraco, #64748b);
+        font-size: .8rem;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+
+    .sr-protocol strong {
+        color: #fff;
+        font-size: 1.6rem;
+        letter-spacing: .05em;
+    }
+
+.sr-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 22px;
+}
+
+/* ---------- Celular ---------- */
+@media (max-width: 640px) {
+    .sr-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sr-card {
+        padding: 20px;
+    }
+
+    .sr-form > .sr-btn {
+        width: 100%;
+    }
+}

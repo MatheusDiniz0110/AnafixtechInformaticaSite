@@ -31,7 +31,8 @@ namespace AnafixtechInformaticaSite.Controllers
 
         public IActionResult Solicitar()
         {
-            return View();
+            // O formulário de solicitação agora vive no ServiceRequestController.
+            return RedirectToAction("Create", "ServiceRequest");
         }
 
         public IActionResult Forum()

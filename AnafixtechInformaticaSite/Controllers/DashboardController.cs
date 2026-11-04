@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;              // [Authorize]: exige log
 using Microsoft.AspNetCore.Mvc;                        // Controller, IActionResult, [HttpPost]...
 using Microsoft.AspNetCore.Mvc.Filters;                // ActionExecutingContext (usado no OnActionExecutionAsync)
 using Microsoft.EntityFrameworkCore;                   // métodos assíncronos do banco: ToListAsync, Include...
+using System.Globalization;                            // CultureInfo (formatar o preço no formulário de solicitação)
 
 namespace AnafixtechInformaticaSite.Controllers
 {
@@ -957,6 +958,235 @@ namespace AnafixtechInformaticaSite.Controllers
         }
 
         // =========================================================================================
+        // ABA: SOLICITAÇÕES (pedidos recebidos pelo site, antes de virarem OS)
+        // =========================================================================================
+
+        // Lista as solicitações com filtro por situação e busca por texto.  →  /Dashboard/Solicitacoes
+        public async Task<IActionResult> Solicitacoes(RequestStatus? status, string? busca)
+        {
+            // Todas as solicitações (somente leitura), já trazendo o serviço escolhido.
+            var consulta = _context.ServiceRequests.AsNoTracking()
+                .Include(s => s.Service)
+                .AsQueryable();
+
+            // Filtro por situação.
+            if (status.HasValue)
+                consulta = consulta.Where(s => s.Status == status.Value);
+
+            // Busca por nome, telefone, e-mail ou equipamento.
+            if (!string.IsNullOrWhiteSpace(busca))
+            {
+                var termo = busca.Trim();
+                consulta = consulta.Where(s => s.ContactName.Contains(termo)
+                                            || s.ContactPhone.Contains(termo)
+                                            || s.ContactEmail.Contains(termo)
+                                            || s.Device.Contains(termo));
+            }
+
+            // Quantidade por situação, para os números dos botões de filtro.
+            var contagem = await _context.ServiceRequests
+                .GroupBy(s => s.Status)
+                .Select(g => new { Status = g.Key, Total = g.Count() })
+                .ToListAsync();
+
+            var vm = new ServiceRequestsViewModel
+            {
+                Status = status,
+                Busca = busca,
+                ContagemPorStatus = contagem.ToDictionary(x => x.Status, x => x.Total),
+                // Mais recentes primeiro, limitando a página.
+                Solicitacoes = await consulta
+                    .OrderByDescending(s => s.RequestDate)
+                    .Take(LimiteLinhas)
+                    .ToListAsync()
+            };
+
+            return View(vm);
+        }
+
+        // Detalhes de uma solicitação.  →  /Dashboard/SolicitacaoDetalhes/12
+        public async Task<IActionResult> SolicitacaoDetalhes(int id)
+        {
+            // Traz o serviço, a conta do site (se houver) e a OS gerada (se já convertida).
+            var solicitacao = await _context.ServiceRequests.AsNoTracking()
+                .Include(s => s.Service)
+                .Include(s => s.User)
+                .Include(s => s.ServiceOrder)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (solicitacao == null) return NotFound(); // registro inexistente: 404
+
+            return View(solicitacao);
+        }
+
+        // Formulário para corrigir/atualizar uma solicitação.  →  GET /Dashboard/SolicitacaoEditar/12
+        [HttpGet]
+        public async Task<IActionResult> SolicitacaoEditar(int id)
+        {
+            var solicitacao = await _context.ServiceRequests.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (solicitacao == null) return NotFound();
+
+            // Copia os dados do banco para o formulário.
+            var vm = new ServiceRequestEditViewModel
+            {
+                Id = solicitacao.Id,
+                ContactName = solicitacao.ContactName,
+                ContactEmail = solicitacao.ContactEmail,
+                ContactPhone = solicitacao.ContactPhone,
+                ContactAddress = solicitacao.ContactAddress,
+                PickupRequested = solicitacao.PickupRequested,
+                Device = solicitacao.Device,
+                ServiceId = solicitacao.ServiceId,
+                Description = solicitacao.Description,
+                Status = solicitacao.Status,
+                // "0.00" com ponto: o MoneyParser entende tanto ponto quanto vírgula.
+                Price = solicitacao.Price?.ToString("0.00", CultureInfo.InvariantCulture),
+                CompletionDate = solicitacao.CompletionDate,
+                InternalNotes = solicitacao.InternalNotes
+            };
+
+            await CarregarServicosAsync(vm);
+            return View(vm);
+        }
+
+        // Grava a edição da solicitação.  →  POST /Dashboard/SolicitacaoEditar
+        [HttpPost]
+        public async Task<IActionResult> SolicitacaoEditar(ServiceRequestEditViewModel vm)
+        {
+            // Converte o preço digitado (vazio = "a combinar"; inválido = erro).
+            decimal? preco = null;
+            if (!string.IsNullOrWhiteSpace(vm.Price))
+            {
+                if (MoneyParser.TryParse(vm.Price, out var convertido))
+                    preco = convertido;
+                else
+                    ModelState.AddModelError(nameof(vm.Price), "Valor inválido. Use o formato 120,50.");
+            }
+
+            // Confere se o serviço escolhido ainda existe no catálogo.
+            Service? servico = null;
+            if (vm.ServiceId.HasValue)
+            {
+                servico = await _context.Services.AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.Id == vm.ServiceId.Value);
+
+                if (servico == null)
+                    ModelState.AddModelError(nameof(vm.ServiceId), "O serviço escolhido não existe mais.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                await CarregarServicosAsync(vm);
+                return View(vm);
+            }
+
+            var solicitacao = await _context.ServiceRequests.FirstOrDefaultAsync(s => s.Id == vm.Id);
+            if (solicitacao == null) return NotFound();
+
+            // Aplica os campos editados.
+            solicitacao.ContactName = vm.ContactName.Trim();
+            solicitacao.ContactEmail = vm.ContactEmail.Trim().ToLowerInvariant();
+            solicitacao.ContactPhone = vm.ContactPhone.Trim();
+            solicitacao.ContactAddress = string.IsNullOrWhiteSpace(vm.ContactAddress) ? null : vm.ContactAddress.Trim();
+            solicitacao.PickupRequested = vm.PickupRequested;
+            solicitacao.Device = vm.Device.Trim();
+            solicitacao.Description = vm.Description.Trim();
+            solicitacao.ServiceId = servico?.Id;
+            solicitacao.Price = preco;
+            solicitacao.Status = vm.Status;
+            solicitacao.InternalNotes = string.IsNullOrWhiteSpace(vm.InternalNotes) ? null : vm.InternalNotes.Trim();
+
+            // Ao marcar como concluída sem informar data, usa hoje.
+            solicitacao.CompletionDate = vm.CompletionDate
+                ?? (vm.Status == RequestStatus.Completed ? Clock.Today : null);
+
+            await _context.SaveChangesAsync();
+
+            Mensagem(true, $"Solicitação {solicitacao.Protocolo} atualizada.");
+            return RedirectToAction(nameof(SolicitacaoDetalhes), new { id = solicitacao.Id });
+        }
+
+        // Exclui uma solicitação que ainda não virou OS.  →  POST /Dashboard/SolicitacaoExcluir/12
+        [HttpPost]
+        public async Task<IActionResult> SolicitacaoExcluir(int id)
+        {
+            var solicitacao = await _context.ServiceRequests.FirstOrDefaultAsync(s => s.Id == id);
+            if (solicitacao == null) return NotFound();
+
+            // Se já virou OS, a solicitação é o histórico daquela OS: não apagamos.
+            if (solicitacao.ServiceOrderId.HasValue)
+            {
+                Mensagem(false, "Esta solicitação já foi convertida em OS e não pode ser excluída.");
+                return RedirectToAction(nameof(SolicitacaoDetalhes), new { id });
+            }
+
+            _context.ServiceRequests.Remove(solicitacao);
+            await _context.SaveChangesAsync();
+
+            Mensagem(true, $"Solicitação {solicitacao.Protocolo} excluída.");
+            return RedirectToAction(nameof(Solicitacoes));
+        }
+
+        // Transforma a solicitação em Ordem de Serviço.  →  POST /Dashboard/SolicitacaoConverterEmOS/12
+        [HttpPost]
+        public async Task<IActionResult> SolicitacaoConverterEmOS(int id)
+        {
+            var solicitacao = await _context.ServiceRequests.FirstOrDefaultAsync(s => s.Id == id);
+            if (solicitacao == null) return NotFound();
+
+            // Evita converter duas vezes.
+            if (solicitacao.ServiceOrderId.HasValue)
+            {
+                Mensagem(false, $"Esta solicitação já foi convertida na OS #{solicitacao.ServiceOrderId}.");
+                return RedirectToAction(nameof(SolicitacaoDetalhes), new { id });
+            }
+
+            var agora = Clock.Now;
+
+            // Monta a OS reaproveitando todos os dados já coletados no formulário público.
+            var pedido = new ServiceOrder
+            {
+                ClientName = solicitacao.ContactName,
+                ClientEmail = solicitacao.ContactEmail,
+                ClientPhone = solicitacao.ContactPhone,
+                ClientAddress = solicitacao.ContactAddress,
+                PickupRequested = solicitacao.PickupRequested,
+                ProductName = solicitacao.Device,
+                ProblemDescription = solicitacao.Description,
+                Urgency = UrgencyLevel.Normal,
+                ServiceId = solicitacao.ServiceId,
+                EstimatedPrice = solicitacao.Price,
+                PriceNote = solicitacao.Price == null ? "A combinar" : null,
+                Status = OrderStatus.Pending,
+                PaymentStatus = OrderPaymentStatus.Pending,
+                CreatedAt = agora,
+                UpdatedAt = agora
+            };
+
+            // Primeira linha do histórico da OS, registrando de onde ela veio.
+            pedido.StatusHistory.Add(new StatusHistoryEntry
+            {
+                FromStatus = null,
+                ToStatus = OrderStatus.Pending,
+                ChangedAt = agora,
+                ChangedBy = NomeDoUsuario(),
+                Note = $"OS criada a partir da solicitação {solicitacao.Protocolo}"
+            });
+
+            // Liga a solicitação à OS (o EF preenche o ServiceOrderId depois de gravar).
+            solicitacao.ServiceOrder = pedido;
+            solicitacao.Status = RequestStatus.Converted;
+
+            _context.ServiceOrders.Add(pedido);
+            await _context.SaveChangesAsync();
+
+            Mensagem(true, $"Solicitação {solicitacao.Protocolo} convertida na OS {pedido.Codigo}.");
+            return RedirectToAction(nameof(PedidoDetalhes), new { id = pedido.Id });
+        }
+
+        // =========================================================================================
         // ABA: NOTIFICAÇÕES
         // =========================================================================================
 
@@ -984,6 +1214,8 @@ namespace AnafixtechInformaticaSite.Controllers
             // Decide para onde ir conforme o tipo do item relacionado.
             if (notificacao.RefType == "order" && notificacao.RefId.HasValue)
                 return RedirectToAction(nameof(PedidoDetalhes), new { id = notificacao.RefId.Value });
+            if (notificacao.RefType == "request" && notificacao.RefId.HasValue)
+                return RedirectToAction(nameof(SolicitacaoDetalhes), new { id = notificacao.RefId.Value });
             if (notificacao.RefType == "ticket")
                 return RedirectToAction(nameof(Tickets));
             if (notificacao.RefType == "stock")
@@ -1010,6 +1242,12 @@ namespace AnafixtechInformaticaSite.Controllers
 
         // Preenche a lista de serviços do catálogo usada no <select> do formulário de OS.
         private async Task CarregarServicosAsync(PedidoFormViewModel vm)
+        {
+            vm.Servicos = await _context.Services.AsNoTracking().OrderBy(s => s.Title).ToListAsync();
+        }
+
+        // Mesma lista, para o formulário de edição de solicitação.
+        private async Task CarregarServicosAsync(ServiceRequestEditViewModel vm)
         {
             vm.Servicos = await _context.Services.AsNoTracking().OrderBy(s => s.Title).ToListAsync();
         }

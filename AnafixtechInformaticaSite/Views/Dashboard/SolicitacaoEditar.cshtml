@@ -1,0 +1,117 @@
+@*
+    Formulário da dashboard para corrigir/atualizar uma solicitação.
+    Recebe ServiceRequestEditViewModel (dados atuais + lista de serviços).
+*@
+@model ServiceRequestEditViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Editar solicitação";
+    ViewData["Tab"] = "Solicitacoes";
+}
+
+<div class="db-card-head">
+    <h2>Editar solicitação</h2>
+    <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="SolicitacaoDetalhes" asp-route-id="@Model.Id">← Voltar</a>
+</div>
+
+<div class="db-card">
+    <form asp-controller="Dashboard" asp-action="SolicitacaoEditar" method="post" class="db-form">
+        @* Campo oculto: identifica qual solicitação está sendo editada. *@
+        <input type="hidden" asp-for="Id" />
+
+        <div asp-validation-summary="ModelOnly" class="db-alert db-alert--erro db-field--full"></div>
+
+        @* ---------- Contato ---------- *@
+        <div class="db-field">
+            <label asp-for="ContactName"></label>
+            <input asp-for="ContactName" class="db-input" />
+            <span asp-validation-for="ContactName" class="db-error"></span>
+        </div>
+
+        <div class="db-field">
+            <label asp-for="ContactPhone"></label>
+            <input asp-for="ContactPhone" class="db-input" />
+            <span asp-validation-for="ContactPhone" class="db-error"></span>
+        </div>
+
+        <div class="db-field db-field--full">
+            <label asp-for="ContactEmail"></label>
+            <input asp-for="ContactEmail" class="db-input" />
+            <span asp-validation-for="ContactEmail" class="db-error"></span>
+        </div>
+
+        <div class="db-field db-field--full">
+            <label asp-for="ContactAddress"></label>
+            <input asp-for="ContactAddress" class="db-input" />
+            <span asp-validation-for="ContactAddress" class="db-error"></span>
+        </div>
+
+        <div class="db-field db-field--full">
+            <label class="db-check">
+                <input asp-for="PickupRequested" /> Buscar o equipamento no endereço
+            </label>
+        </div>
+
+        @* ---------- Equipamento e serviço ---------- *@
+        <div class="db-field">
+            <label asp-for="Device"></label>
+            <input asp-for="Device" class="db-input" />
+            <span asp-validation-for="Device" class="db-error"></span>
+        </div>
+
+        <div class="db-field">
+            <label asp-for="ServiceId"></label>
+            <select asp-for="ServiceId" class="db-select">
+                <option value="">— nenhum / outro problema —</option>
+                @foreach (var servico in Model.Servicos)
+                {
+                    <option value="@servico.Id">@servico.Title — @Fmt.Money(servico.Price)</option>
+                }
+            </select>
+            <span asp-validation-for="ServiceId" class="db-error"></span>
+        </div>
+
+        <div class="db-field db-field--full">
+            <label asp-for="Description"></label>
+            <textarea asp-for="Description" class="db-textarea"></textarea>
+            <span asp-validation-for="Description" class="db-error"></span>
+        </div>
+
+        @* ---------- Andamento ---------- *@
+        <div class="db-field">
+            <label asp-for="Status"></label>
+            <select asp-for="Status" class="db-select">
+                @foreach (var situacao in Enum.GetValues<RequestStatus>())
+                {
+                    <option value="@situacao">@situacao.ToLabel()</option>
+                }
+            </select>
+        </div>
+
+        <div class="db-field">
+            <label asp-for="Price"></label>
+            <input asp-for="Price" class="db-input" inputmode="decimal" placeholder="0,00 (vazio = a combinar)" />
+            <span asp-validation-for="Price" class="db-error"></span>
+        </div>
+
+        <div class="db-field">
+            <label asp-for="CompletionDate"></label>
+            <input asp-for="CompletionDate" type="date" class="db-input" />
+            <span asp-validation-for="CompletionDate" class="db-error"></span>
+        </div>
+
+        <div class="db-field db-field--full">
+            <label asp-for="InternalNotes"></label>
+            <textarea asp-for="InternalNotes" class="db-textarea" placeholder="Visível apenas para a equipe."></textarea>
+            <span asp-validation-for="InternalNotes" class="db-error"></span>
+        </div>
+
+        <div class="db-field db-field--full">
+            <button type="submit" class="db-btn db-btn--primary">Salvar alterações</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

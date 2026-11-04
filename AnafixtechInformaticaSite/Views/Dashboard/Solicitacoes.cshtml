@@ -1,0 +1,95 @@
+@*
+    Aba "Solicitações" da dashboard: pedidos enviados pelo formulário público do site.
+    Recebe ServiceRequestsViewModel com as linhas, o filtro, a busca e os contadores.
+*@
+@model ServiceRequestsViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Solicitações";
+    ViewData["Tab"] = "Solicitacoes";
+
+    // Total geral para o botão "Todas".
+    var total = Model.ContagemPorStatus.Values.Sum();
+}
+
+<div class="db-card-head"><h2>Solicitações de serviço</h2></div>
+
+@* ===== Filtros por situação ===== *@
+<div class="db-chips">
+    <a class="db-chip @(Model.Status == null ? "active" : "")"
+       asp-controller="Dashboard" asp-action="Solicitacoes" asp-route-busca="@Model.Busca">Todas (@total)</a>
+
+    @foreach (var situacao in Enum.GetValues<RequestStatus>())
+    {
+        <a class="db-chip @(Model.Status == situacao ? "active" : "")"
+           asp-controller="Dashboard" asp-action="Solicitacoes"
+           asp-route-status="@situacao" asp-route-busca="@Model.Busca">
+            @situacao.ToLabel() (@Model.ContagemPorStatus.GetValueOrDefault(situacao))
+        </a>
+    }
+</div>
+
+@* ===== Busca por texto (GET: o termo vai no endereço) ===== *@
+<form method="get" asp-controller="Dashboard" asp-action="Solicitacoes" class="db-form" style="margin-bottom:1rem">
+    @* Mantém o filtro de situação escolhido ao buscar. *@
+    <input type="hidden" name="status" value="@Model.Status" />
+    <div class="db-field db-field--full">
+        <input class="db-input" name="busca" value="@Model.Busca"
+               placeholder="Buscar por nome, telefone, e-mail ou equipamento" />
+    </div>
+    <div class="db-field">
+        <button type="submit" class="db-btn">Buscar</button>
+    </div>
+</form>
+
+@* ===== Tabela de solicitações ===== *@
+<div class="db-table-wrap">
+    <table class="db-table">
+        <thead>
+            <tr>
+                <th>Protocolo</th>
+                <th>Cliente</th>
+                <th>Equipamento</th>
+                <th>Serviço</th>
+                <th>Situação</th>
+                <th>Recebida em</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var solicitacao in Model.Solicitacoes)
+            {
+                <tr>
+                    <td>
+                        <a asp-controller="Dashboard" asp-action="SolicitacaoDetalhes" asp-route-id="@solicitacao.Id">
+                            <strong>@solicitacao.Protocolo</strong>
+                        </a>
+                    </td>
+                    <td>
+                        @solicitacao.ContactName
+                        <div class="db-muted">@solicitacao.ContactPhone</div>
+                    </td>
+                    <td>@solicitacao.Device</td>
+                    <td>@(solicitacao.Service?.Title ?? "—")</td>
+                    <td>
+                        <span class="db-badge db-badge--@solicitacao.Status.ToBadge()">
+                            @solicitacao.Status.ToLabel()
+                        </span>
+                    </td>
+                    <td>@Fmt.Stamp(solicitacao.RequestDate)</td>
+                    <td class="db-num">
+                        <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="SolicitacaoDetalhes" asp-route-id="@solicitacao.Id">Abrir</a>
+                    </td>
+                </tr>
+            }
+
+            @* Mensagem quando a lista está vazia. *@
+            @if (!Model.Solicitacoes.Any())
+            {
+                <tr>
+                    <td colspan="7" class="db-empty">Nenhuma solicitação encontrada.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

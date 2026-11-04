@@ -1,0 +1,109 @@
+@*
+    Detalhes de uma solicitação de serviço (aba "Solicitações" da dashboard).
+    Recebe a própria entidade ServiceRequest, já com Serviço, Usuário e OS carregados.
+*@
+@model ServiceRequest
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = Model.Protocolo;
+    ViewData["Tab"] = "Solicitacoes";
+
+    // Link do WhatsApp do cliente: só os dígitos, com o DDI 55 quando faltar.
+    var digitos = new string(Model.ContactPhone.Where(char.IsDigit).ToArray());
+    if (digitos.Length is 10 or 11) { digitos = "55" + digitos; }
+    var textoZap = Uri.EscapeDataString($"Olá, {Model.ContactName}! Aqui é da AnaFixTech sobre a sua solicitação {Model.Protocolo}.");
+}
+
+@* ===== Cabeçalho: protocolo, situação e botões ===== *@
+<div class="db-card-head">
+    <h2>
+        @Model.Protocolo
+        <span class="db-badge db-badge--@Model.Status.ToBadge()">@Model.Status.ToLabel()</span>
+    </h2>
+
+    <div class="db-inline">
+        @* WhatsApp só faz sentido se houver telefone. *@
+        @if (!string.IsNullOrWhiteSpace(digitos))
+        {
+            <a class="db-btn db-btn--sm" target="_blank" rel="noopener noreferrer"
+               href="https://wa.me/@(digitos)?text=@textoZap">WhatsApp do cliente</a>
+        }
+
+        <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="SolicitacaoEditar" asp-route-id="@Model.Id">Editar</a>
+
+        @* Converte em OS somente se ainda não foi convertida. *@
+        @if (Model.ServiceOrderId == null)
+        {
+            <form asp-controller="Dashboard" asp-action="SolicitacaoConverterEmOS" asp-route-id="@Model.Id" method="post" class="db-inline"
+                  onsubmit="return confirm('Criar uma Ordem de Serviço a partir desta solicitação?');">
+                <button type="submit" class="db-btn db-btn--primary db-btn--sm">Converter em OS</button>
+            </form>
+        }
+        else
+        {
+            <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="PedidoDetalhes" asp-route-id="@Model.ServiceOrderId">
+                Ver OS @(Model.ServiceOrder?.Codigo ?? $"#{Model.ServiceOrderId}")
+            </a>
+        }
+
+        <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="Solicitacoes">← Voltar</a>
+    </div>
+</div>
+
+@* ===== Linha 1: contato e equipamento ===== *@
+<div class="db-grid db-grid--2">
+    <div class="db-card">
+        <h2>Cliente</h2>
+        <dl class="db-dl">
+            <dt>Nome</dt><dd>@Model.ContactName</dd>
+            <dt>Telefone</dt><dd>@Model.ContactPhone</dd>
+            <dt>E-mail</dt><dd>@Model.ContactEmail</dd>
+            <dt>Endereço</dt><dd>@(string.IsNullOrWhiteSpace(Model.ContactAddress) ? "—" : Model.ContactAddress)</dd>
+            <dt>Busca</dt><dd>@(Model.PickupRequested ? "Cliente pediu para buscarmos" : "Cliente leva/retira")</dd>
+            <dt>Conta do site</dt><dd>@(Model.User?.Name ?? "Visitante (sem login)")</dd>
+        </dl>
+    </div>
+
+    <div class="db-card">
+        <h2>Equipamento e problema</h2>
+        <dl class="db-dl">
+            <dt>Equipamento</dt><dd>@Model.Device</dd>
+            <dt>Serviço</dt><dd>@(Model.Service?.Title ?? "—")</dd>
+            <dt>Problema</dt><dd style="white-space:pre-wrap">@Model.Description</dd>
+        </dl>
+    </div>
+</div>
+
+@* ===== Linha 2: andamento e anotações internas ===== *@
+<div class="db-grid db-grid--2">
+    <div class="db-card">
+        <h2>Andamento</h2>
+        <dl class="db-dl">
+            <dt>Recebida em</dt><dd>@Fmt.Stamp(Model.RequestDate)</dd>
+            <dt>Concluída em</dt><dd>@Fmt.Date(Model.CompletionDate)</dd>
+            <dt>Valor orçado</dt><dd>@(Model.Price.HasValue ? Fmt.Money(Model.Price) : "A combinar")</dd>
+            <dt>OS gerada</dt>
+            <dd>@(Model.ServiceOrderId.HasValue ? $"#{Model.ServiceOrderId}" : "Ainda não convertida")</dd>
+        </dl>
+    </div>
+
+    <div class="db-card">
+        <h2>Anotações internas</h2>
+        @* Este texto NUNCA é mostrado ao cliente. *@
+        <p style="white-space:pre-wrap">@(string.IsNullOrWhiteSpace(Model.InternalNotes) ? "Nenhuma anotação." : Model.InternalNotes)</p>
+    </div>
+</div>
+
+@* ===== Zona de risco: excluir a solicitação (pede confirmação no navegador) ===== *@
+@if (Model.ServiceOrderId == null)
+{
+    <div class="db-card" style="margin-top:1rem">
+        <div class="db-inline" style="justify-content:space-between">
+            <span class="db-muted">Excluir remove a solicitação definitivamente.</span>
+            <form asp-controller="Dashboard" asp-action="SolicitacaoExcluir" asp-route-id="@Model.Id" method="post"
+                  onsubmit="return confirm('Excluir esta solicitação definitivamente?');">
+                <button type="submit" class="db-btn db-btn--danger db-btn--sm">Excluir solicitação</button>
+            </form>
+        </div>
+    </div>
+}
