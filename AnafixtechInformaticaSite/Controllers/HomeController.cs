@@ -17,9 +17,12 @@ namespace AnafixtechInformaticaSite.Controllers
             return View(data);
         }
 
+        // A rota antiga /Home/Servicos não tinha view e devolvia erro 500.
+        // Agora ela apenas redireciona para o catálogo verdadeiro (/Services),
+        // mantendo links antigos funcionando e sem duplicar página.
         public IActionResult Servicos()
         {
-            return View();
+            return RedirectToActionPermanent("Index", "Services");
         }
 
         public IActionResult Privacy() => View();

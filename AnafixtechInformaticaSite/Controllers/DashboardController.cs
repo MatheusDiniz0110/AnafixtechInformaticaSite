@@ -26,10 +26,14 @@ namespace AnafixtechInformaticaSite.Controllers
         // Acesso ao banco de dados, recebido por injeção de dependência.
         private readonly AppDbContext _context;
 
+        // Acesso à pasta wwwroot (para apagar a foto quando a solicitação é excluída).
+        private readonly IWebHostEnvironment _ambiente;
+
         // Construtor: o ASP.NET entrega o AppDbContext pronto; guardamos para usar nas actions.
-        public DashboardController(AppDbContext context)
+        public DashboardController(AppDbContext context, IWebHostEnvironment ambiente)
         {
             _context = context;
+            _ambiente = ambiente;
         }
 
         // Roda ANTES de qualquer action deste controller.
@@ -1125,8 +1129,29 @@ namespace AnafixtechInformaticaSite.Controllers
             _context.ServiceRequests.Remove(solicitacao);
             await _context.SaveChangesAsync();
 
+            // Remove também a foto do disco, para não deixar arquivos órfãos ocupando espaço.
+            // Se o arquivo já não existir, o File.Delete não reclama.
+            ApagarFotoDaSolicitacao(solicitacao.PhotoPath);
+
             Mensagem(true, $"Solicitação {solicitacao.Protocolo} excluída.");
             return RedirectToAction(nameof(Solicitacoes));
+        }
+
+        // Apaga do wwwroot a foto de uma solicitação (usado apenas quando ela é excluída).
+        // O caminho gravado é algo como /uploads/requests/abc123.jpg. Só aceitamos esse formato,
+        // para que um valor estranho no banco não consiga apagar outros arquivos do servidor.
+        private void ApagarFotoDaSolicitacao(string? caminhoFoto)
+        {
+            if (string.IsNullOrWhiteSpace(caminhoFoto)) return;
+            if (!caminhoFoto.StartsWith("/uploads/requests/", StringComparison.OrdinalIgnoreCase)) return;
+
+            var nomeArquivo = Path.GetFileName(caminhoFoto);
+            if (string.IsNullOrWhiteSpace(nomeArquivo)) return;
+
+            var caminhoCompleto = Path.Combine(_ambiente.WebRootPath, "uploads", "requests", nomeArquivo);
+
+            if (System.IO.File.Exists(caminhoCompleto))
+                System.IO.File.Delete(caminhoCompleto);
         }
 
         // Transforma a solicitação em Ordem de Serviço.  →  POST /Dashboard/SolicitacaoConverterEmOS/12

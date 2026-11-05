@@ -441,6 +441,10 @@ namespace AnafixtechInformaticaSite.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<string>("PhotoPath")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.Property<bool>("PickupRequested")
                         .HasColumnType("bit");
 

@@ -51,6 +51,11 @@ namespace AnafixtechInformaticaSite.Models
         public int? ServiceId { get; set; }
         public Service? Service { get; set; }
 
+        // Caminho da foto enviada pelo cliente (ex.: /uploads/requests/abc123.jpg).
+        // Fica nulo quando o cliente não anexou imagem. O arquivo em si fica em wwwroot.
+        [StringLength(300)]
+        public string? PhotoPath { get; set; }
+
         // ---------- Andamento ----------
         public RequestStatus Status { get; set; } = RequestStatus.Pending; // toda solicitação nasce "Pendente"
 

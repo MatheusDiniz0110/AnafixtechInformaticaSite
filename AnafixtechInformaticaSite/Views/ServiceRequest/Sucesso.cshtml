@@ -7,23 +7,27 @@
     var protocolo = ViewBag.Protocolo as string ?? "";
     var nome = ViewBag.NomeSolicitante as string;
 
-    // Mensagem pronta para o cliente continuar a conversa no WhatsApp.
     var textoWhatsApp = Uri.EscapeDataString($"Olá! Acabei de enviar a solicitação {protocolo} pelo site da AnaFixTech.");
 }
 
 @section Head {
+    <meta name="robots" content="noindex, nofollow" />
     <link rel="stylesheet" href="~/css/serviceRequest.css" asp-append-version="true" />
 }
 
 <div class="sr-page">
     <div class="sr-card sr-success">
-        <div class="sr-success-icon" aria-hidden="true">✓</div>
+        <div class="sr-success-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <use href="#icone-check"></use>
+            </svg>
+        </div>
 
-        <h1 class="sr-title">Solicitação enviada!</h1>
+        <h1 class="sr-title">Solicitação enviada</h1>
 
         <p class="sr-subtitle">
-            Obrigado@(string.IsNullOrWhiteSpace(nome) ? "" : $", {nome}")! Recebemos o seu pedido
-            e a equipe da AnaFixTech vai analisar e entrar em contato.
+            Recebemos o pedido@(string.IsNullOrWhiteSpace(nome) ? "" : $", {nome}"). A AnaFixTech vai analisar
+            e entrar em contato pelo telefone ou e-mail informado.
         </p>
 
         @* Protocolo: o cliente deve guardar para referência. *@
@@ -40,6 +44,9 @@
         <div class="sr-actions">
             <a class="sr-btn" href="https://wa.me/5562998877833?text=@textoWhatsApp" target="_blank" rel="noopener noreferrer">
                 Falar no WhatsApp
+            </a>
+            <a class="sr-btn sr-btn--ghost" asp-controller="ServiceRequest" asp-action="Acompanhar">
+                Acompanhar solicitação
             </a>
             <a class="sr-btn sr-btn--ghost" asp-controller="Home" asp-action="Index">
                 Voltar ao início

@@ -71,6 +71,17 @@
             <dt>Serviço</dt><dd>@(Model.Service?.Title ?? "—")</dd>
             <dt>Problema</dt><dd style="white-space:pre-wrap">@Model.Description</dd>
         </dl>
+
+        @* Foto enviada pelo cliente no formulário (opcional). *@
+        @if (!string.IsNullOrWhiteSpace(Model.PhotoPath))
+        {
+            <h2 style="margin-top:1rem">Foto do equipamento</h2>
+            <a href="@Model.PhotoPath" target="_blank" rel="noopener noreferrer">
+                <img src="@Model.PhotoPath" alt="Foto do equipamento enviada por @Model.ContactName"
+                     style="max-width:100%;border-radius:10px;border:1px solid var(--borda)" />
+            </a>
+            <p class="db-muted" style="margin-top:.5rem">Clique na imagem para abrir em tamanho real.</p>
+        }
     </div>
 </div>
 

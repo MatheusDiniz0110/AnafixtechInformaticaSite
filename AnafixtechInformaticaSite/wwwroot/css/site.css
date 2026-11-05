@@ -1,144 +1,485 @@
+/* =====================================================================
+   AnaFixTech Informática — base visual do site público.
+   Paleta: grafite, azul da marca (do logo) e cobre como cor de apoio.
+   Os nomes --azul/--azul-claro são mantidos porque a dashboard usa
+   essas variáveis em dashboard.css.
+   ===================================================================== */
+
 :root {
-    --bg-base: #05070f;
-    --bg-elevado: #0b0f1a;
-    --bg-input: #10141f;
-    --borda: #1f2937;
-    --texto-principal: #e5e7eb;
-    --texto-suave: #94a3b8;
-    --texto-fraco: #64748b;
-    --azul: #2563eb;
-    --azul-claro: #60a5fa;
+    --bg-base: #0f1417;
+    --bg-elevado: #161c20;
+    --bg-input: #1b2328;
+    --borda: #2b353b;
+    --borda-forte: #3a464d;
+
+    --texto-principal: #ece7dd;
+    --texto-suave: #a7afab;
+    --texto-fraco: #78837e;
+
+    --azul: #2f7dbd;
+    --azul-claro: #78aed6;
+    --marca: #2f7dbd;
+    --marca-escura: #1f5b8c;
+    --cobre: #c98a3c;
+    --cobre-claro: #e0b072;
+    --sucesso: #6aa37c;
+    --erro: #d97b6f;
+
+    --largura: 1120px;
+    --raio: 4px;
+    --fonte-titulo: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+    --fonte-texto: "Source Sans 3", "Segoe UI", Arial, sans-serif;
 }
 
-html, body {
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+html,
+body {
     background-color: var(--bg-base);
     color: var(--texto-principal);
 }
 
-a {
-    color: var(--azul-claro);
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    font-family: var(--fonte-texto);
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
 }
 
-    a:hover {
-        color: #93c5fd;
-    }
+body > .container {
+    flex: 1 0 auto;
+    width: 100%;
+    max-width: var(--largura);
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: 0;
+}
 
-h1, h2, h3, h4, h5, h6 {
-    color: #fff;
+main {
+    padding-bottom: 2rem;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin-top: 0;
+    font-family: var(--fonte-titulo);
+    font-weight: 600;
+    letter-spacing: .01em;
+    line-height: 1.08;
+    color: var(--texto-principal);
+}
+
+h1 {
+    font-size: clamp(2.4rem, 5vw, 3.7rem);
+}
+
+h2 {
+    font-size: clamp(1.7rem, 3.4vw, 2.3rem);
+}
+
+h3 {
+    font-size: 1.32rem;
+}
+
+p {
+    margin-top: 0;
+}
+
+a {
+    color: var(--azul-claro);
+    text-underline-offset: 3px;
+}
+
+a:hover {
+    color: var(--cobre-claro);
+}
+
+::selection {
+    background: var(--cobre);
+    color: #17110a;
+}
+
+:focus-visible {
+    outline: 2px solid var(--cobre-claro);
+    outline-offset: 3px;
 }
 
 .text-muted {
     color: var(--texto-fraco) !important;
 }
 
-/* ---------- Navbar ---------- */
+/* ---------- Rótulos e títulos de seção ---------- */
+
+.rotulo {
+    display: block;
+    margin: 0 0 .65rem;
+    font-family: var(--fonte-titulo);
+    font-size: .82rem;
+    font-weight: 600;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--cobre-claro);
+}
+
+.titulo-secao {
+    margin: 0 0 .8rem;
+}
+
+.linha-fina {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-top: 1px solid var(--borda);
+}
+
+/* ---------- Cabeçalho ---------- */
+
+.topo {
+    background: var(--bg-base);
+}
+
+.faixa-servico {
+    background: var(--bg-elevado);
+    border-bottom: 1px solid var(--borda);
+    font-size: .86rem;
+    color: var(--texto-suave);
+}
+
+.faixa-servico__interno {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-top: .5rem;
+    padding-bottom: .5rem;
+}
+
+.faixa-servico__contato {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.faixa-servico a {
+    color: var(--texto-principal);
+    text-decoration: none;
+}
+
+.faixa-servico a:hover {
+    color: var(--cobre-claro);
+}
+
 .navbar {
-    background-color: var(--bg-elevado) !important;
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    padding: .65rem 0;
+    background: var(--bg-base) !important;
     border-bottom: 1px solid var(--borda);
 }
 
-.navbar-brand {
-    color: #fff !important;
+.navbar > .container {
+    gap: 1rem;
+}
+
+.marca {
+    display: inline-flex;
+    align-items: center;
+    gap: .7rem;
+    color: var(--texto-principal) !important;
+    text-decoration: none;
+}
+
+.marca img {
+    width: 42px;
+    height: 42px;
+    border-radius: 3px;
+}
+
+.marca__texto {
+    display: flex;
+    flex-direction: column;
+    font-family: var(--fonte-titulo);
+    font-size: 1.45rem;
     font-weight: 700;
+    line-height: .95;
+    letter-spacing: .02em;
 }
 
-.navbar .nav-link {
-    color: var(--texto-suave) !important;
-    transition: color .15s ease;
+.marca__texto small {
+    margin-top: .22rem;
+    font-family: var(--fonte-texto);
+    font-size: .66rem;
+    font-weight: 600;
+    letter-spacing: .19em;
+    text-transform: uppercase;
+    color: var(--texto-fraco);
 }
-
-    .navbar .nav-link:hover,
-    .navbar .nav-link.active {
-        color: #fff !important;
-    }
 
 .navbar-toggler {
-    border-color: var(--borda);
+    padding: .35rem .7rem;
+    font-family: var(--fonte-titulo);
+    font-size: 1rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--texto-principal);
+    background: transparent;
+    border: 1px solid var(--borda);
+    border-radius: var(--raio);
 }
 
-/* ---------- Formulários (Login, Register, Solicitação) ---------- */
+.navbar-toggler:focus {
+    box-shadow: none;
+}
+
+.navbar-toggler-icon {
+    display: none;
+}
+
+.navbar-collapse {
+    gap: 1.5rem;
+}
+
+.menu-principal {
+    gap: .25rem;
+}
+
+.menu-principal .nav-link {
+    padding: .55rem .65rem;
+    font-size: .96rem;
+    font-weight: 600;
+    color: var(--texto-suave) !important;
+}
+
+.menu-principal .nav-link:hover,
+.menu-principal .nav-link:focus {
+    color: var(--texto-principal) !important;
+    text-decoration: underline;
+    text-decoration-color: var(--cobre);
+    text-underline-offset: 6px;
+}
+
+.topo__acoes {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+}
+
+.topo__telefone {
+    font-size: .92rem;
+    font-weight: 600;
+    color: var(--texto-principal);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.topo__telefone:hover {
+    color: var(--cobre-claro);
+}
+
+/* ---------- Botões ---------- */
+
+.botao,
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    padding: .72rem 1.15rem;
+    font-family: var(--fonte-texto);
+    font-size: .95rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #fff;
+    text-decoration: none;
+    background: var(--marca);
+    border: 1px solid var(--marca);
+    border-radius: var(--raio);
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.botao:hover,
+.btn-primary:hover {
+    color: #fff;
+    background: var(--marca-escura);
+    border-color: var(--marca-escura);
+    text-decoration: none;
+}
+
+.botao--whats {
+    background: #247a4d;
+    border-color: #247a4d;
+}
+
+.botao--whats:hover {
+    background: #1b6040;
+    border-color: #1b6040;
+}
+
+.botao--linha {
+    color: var(--texto-principal);
+    background: transparent;
+    border-color: var(--borda-forte);
+}
+
+.botao--linha:hover {
+    color: var(--texto-principal);
+    background: var(--bg-input);
+    border-color: var(--texto-fraco);
+}
+
+.botao--pequeno {
+    padding: .5rem .8rem;
+    font-size: .87rem;
+}
+
+.botao svg,
+.link-whats svg {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 auto;
+}
+
+.link-whats {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .9rem;
+    font-weight: 700;
+    color: var(--texto-suave);
+    text-decoration: none;
+}
+
+.link-whats:hover {
+    color: var(--cobre-claro);
+}
+
+/* ---------- Formulários ---------- */
+
 .form-control,
 .form-select {
+    padding: .7rem .8rem;
+    color: var(--texto-principal);
     background-color: var(--bg-input);
     border: 1px solid var(--borda);
-    color: var(--texto-principal);
+    border-radius: var(--raio);
 }
 
-    .form-control:focus,
-    .form-select:focus {
-        background-color: var(--bg-input);
-        border-color: var(--azul);
-        color: #fff;
-        box-shadow: 0 0 0 .2rem rgba(37, 99, 235, .25);
-    }
+.form-control:focus,
+.form-select:focus {
+    color: var(--texto-principal);
+    background-color: var(--bg-input);
+    border-color: var(--marca);
+    box-shadow: 0 0 0 3px rgba(47, 125, 189, .2);
+}
 
-    .form-control::placeholder {
-        color: var(--texto-fraco);
-    }
+.form-control::placeholder {
+    color: var(--texto-fraco);
+}
 
 .form-floating > label {
     color: var(--texto-fraco);
 }
 
-.form-check-label {
+.form-check-label,
+.form-text {
     color: var(--texto-suave);
 }
 
-/* ---------- Botões ---------- */
-.btn-primary {
-    background-color: var(--azul);
-    border-color: var(--azul);
-}
-
-    .btn-primary:hover {
-        background-color: #1d4ed8;
-        border-color: #1d4ed8;
-    }
-
-.btn-outline-secondary {
-    border-color: var(--borda);
+.form-label {
+    margin-bottom: .3rem;
+    font-size: .9rem;
+    font-weight: 600;
     color: var(--texto-suave);
 }
 
-    .btn-outline-secondary:hover {
-        background-color: var(--bg-input);
-        color: #fff;
-    }
+/* ---------- Cartões e tabelas genéricos ---------- */
 
-/* ---------- Cards genéricos (fora do catálogo, que já tem CSS próprio) ---------- */
 .card {
+    color: var(--texto-principal);
     background-color: var(--bg-elevado);
     border: 1px solid var(--borda);
-    color: var(--texto-principal);
+    border-radius: var(--raio);
 }
 
-/* ---------- Rodapé ---------- */
-.footer,
-footer {
-    position: static !important;
-    width: auto !important;
-    height: auto !important;
-    flex-shrink: 0;
+.alert {
+    border-radius: var(--raio);
 }
 
-    footer a {
-        color: var(--texto-suave);
-    }
+.alert-danger {
+    color: #f3c5bd;
+    background: rgba(180, 70, 55, .16);
+    border-color: rgba(217, 123, 111, .45);
+}
 
-    /* ---------- Área de login/usuário na navbar ---------- */
+/* ---------- Conta (login/registrar) ---------- */
+
+.acesso {
+    padding: 3.5rem 0 2rem;
+}
+
+.acesso__caixa {
+    max-width: 440px;
+    padding: 1.6rem;
+    background: var(--bg-elevado);
+    border-top: 2px solid var(--cobre);
+}
+
+.acesso__caixa--largo {
+    max-width: 620px;
+}
+
+.acesso__caixa h1 {
+    margin-bottom: .7rem;
+    font-size: 2.4rem;
+}
+
+.acesso__texto {
+    margin-bottom: 1.4rem;
+    font-size: .95rem;
+    color: var(--texto-suave);
+}
+
+.acesso__rodape {
+    margin: 1.2rem 0 0;
+    font-size: .9rem;
+    color: var(--texto-suave);
+}
+
+.conta {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+}
+
 .user-badge {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
-    border-radius: 999px;
-    background-color: var(--bg-input);
-    border: 1px solid var(--borda);
+    gap: 6px;
+    padding: .25rem .6rem;
+    font-size: .82rem;
     color: var(--texto-suave);
-    font-size: .85rem;
+    border-left: 1px solid var(--borda);
 }
 
 .user-badge svg {
+    width: 15px;
+    height: 15px;
     color: var(--texto-fraco);
     flex-shrink: 0;
 }
@@ -146,36 +487,171 @@ footer {
 .btn-logout {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
+    padding: .3rem .5rem;
+    font-size: .82rem;
+    color: var(--texto-suave);
     background: transparent;
     border: none;
-    color: var(--texto-suave);
-    font-size: .85rem;
-    padding: 6px 10px;
-    border-radius: 8px;
     cursor: pointer;
-    transition: background-color .15s ease, color .15s ease;
 }
 
 .btn-logout:hover {
-    background-color: var(--bg-input);
-    color: #fff;
+    color: var(--texto-principal);
+    text-decoration: underline;
 }
 
 .btn-login {
     display: inline-flex;
     align-items: center;
-    background-color: var(--azul);
-    color: #fff !important;
-    font-size: .85rem;
-    font-weight: 600;
-    padding: 8px 18px;
-    border-radius: 999px;
+    padding: .48rem .8rem;
+    font-size: .87rem;
+    font-weight: 700;
+    color: var(--texto-principal) !important;
     text-decoration: none;
-    transition: background-color .15s ease;
+    border: 1px solid var(--borda);
+    border-radius: var(--raio);
 }
 
 .btn-login:hover {
-    background-color: #1d4ed8;
-    color: #fff !important;
+    background: var(--bg-input);
+    color: var(--texto-principal) !important;
+    text-decoration: none;
+}
+
+/* ---------- WhatsApp fixo ---------- */
+
+.whats-fixo {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 1040;
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .7rem .95rem;
+    font-size: .9rem;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: none;
+    background: #247a4d;
+    border: 1px solid #2d8f5b;
+    border-radius: var(--raio);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .35);
+}
+
+.whats-fixo:hover {
+    color: #fff;
+    background: #1b6040;
+    text-decoration: none;
+}
+
+.whats-fixo svg {
+    width: 19px;
+    height: 19px;
+}
+
+/* ---------- Rodapé ---------- */
+
+.site-footer {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    flex-shrink: 0;
+    margin-top: 4rem;
+    padding: 0;
+    background: var(--bg-elevado);
+    border-top: 1px solid var(--borda);
+}
+
+footer a {
+    color: var(--texto-suave);
+}
+
+/* ---------- Página de erro ---------- */
+
+.pagina-erro {
+    max-width: 620px;
+    padding: 4rem 0 5rem;
+}
+
+.pagina-erro h1 {
+    margin-bottom: 1rem;
+}
+
+.pagina-erro p {
+    color: var(--texto-suave);
+}
+
+/* ---------- Responsivo ---------- */
+
+@media (max-width: 991px) {
+    .navbar-collapse {
+        padding: 1rem 0 .5rem;
+        border-top: 1px solid var(--borda);
+    }
+
+    .menu-principal {
+        gap: 0;
+    }
+
+    .menu-principal .nav-link {
+        padding: .6rem 0;
+    }
+
+    .topo__acoes {
+        flex-wrap: wrap;
+        margin-top: .75rem;
+    }
+
+    .topo__telefone {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    body {
+        font-size: 16px;
+    }
+
+    body > .container {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .faixa-servico__interno {
+        justify-content: center;
+        text-align: center;
+    }
+
+    .faixa-servico__esquerda {
+        display: none;
+    }
+
+    .faixa-servico__contato {
+        gap: 1rem;
+    }
+
+    .whats-fixo {
+        right: 12px;
+        bottom: 12px;
+        padding: .65rem .8rem;
+    }
+
+    .whats-fixo span {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+    }
 }

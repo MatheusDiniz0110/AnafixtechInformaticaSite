@@ -1,49 +1,74 @@
-/* =====================================================================
-   Estilos das telas públicas de solicitação de serviço.
-   Usa as variáveis de cor do site.css, com valores de reserva.
-   ===================================================================== */
+/* Formulário público de solicitação, acompanhamento e confirmação. */
 
-.sr-page {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 48px 20px 80px;
-    color: var(--texto-principal, #e5e7eb);
+/* ---------- Formulário de solicitação ---------- */
+
+.pedido {
+    padding: 3.5rem 0 2rem;
 }
 
-/* ---------- Cabeçalho ---------- */
-.sr-header {
-    text-align: center;
-    margin-bottom: 28px;
+.pedido__topo {
+    max-width: 760px;
+    margin-bottom: 2.5rem;
 }
 
-.sr-eyebrow {
-    color: var(--azul-claro, #60a5fa);
-    font-weight: 700;
-    letter-spacing: .12em;
-    font-size: .78rem;
+.pedido__topo h1 {
+    margin-bottom: .9rem;
+    font-size: clamp(2.3rem, 5vw, 3.4rem);
 }
 
-.sr-title {
-    font-size: clamp(2rem, 4vw, 2.6rem);
-    font-weight: 800;
-    color: #fff;
-    margin: 10px 0 14px;
-}
-
-.sr-subtitle {
-    color: var(--texto-suave, #94a3b8);
+.pedido__topo p {
     max-width: 640px;
-    margin: 0 auto;
-    line-height: 1.6;
+    margin: 0;
+    color: var(--texto-suave);
 }
 
-/* ---------- Cartão e formulário ---------- */
-.sr-card {
-    background: var(--bg-elevado, #0b0f1a);
-    border: 1px solid var(--borda, #1f2937);
-    border-radius: 18px;
-    padding: 28px;
+.pedido__grade {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(260px, .55fr);
+    gap: 3.5rem;
+    align-items: start;
 }
+
+.pedido__formulario {
+    min-width: 0;
+}
+
+.pedido__apoio {
+    padding: 1.5rem;
+    background: var(--bg-elevado);
+    border-top: 2px solid var(--cobre);
+}
+
+.pedido__apoio h2 {
+    margin-bottom: .8rem;
+    font-size: 1.4rem;
+}
+
+.pedido__apoio ol {
+    margin: 0 0 1rem;
+    padding-left: 1.15rem;
+    font-size: .93rem;
+    color: var(--texto-suave);
+}
+
+.pedido__apoio li {
+    margin-bottom: .5rem;
+}
+
+.pedido__apoio-nota,
+.pedido__apoio-endereco {
+    margin: 1rem 0;
+    font-size: .86rem;
+    color: var(--texto-fraco);
+}
+
+.pedido__apoio-endereco {
+    margin-bottom: 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--borda);
+}
+
+/* ---------- Formulário ---------- */
 
 .sr-form {
     display: flex;
@@ -52,11 +77,10 @@
 }
 
 .sr-section {
-    font-size: 1.05rem;
-    color: #fff;
-    margin: 18px 0 6px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--borda, #1f2937);
+    margin: 1.8rem 0 .9rem;
+    padding-bottom: .45rem;
+    font-size: 1.28rem;
+    border-bottom: 1px solid var(--borda);
 }
 
 .sr-grid {
@@ -76,189 +100,387 @@
 }
 
 .sr-field label {
-    color: var(--texto-suave, #94a3b8);
-    font-size: .85rem;
+    font-size: .88rem;
     font-weight: 600;
+    color: var(--texto-suave);
 }
 
 .sr-input {
     width: 100%;
-    background: var(--bg-input, #10141f);
-    border: 1px solid var(--borda, #1f2937);
-    border-radius: 10px;
-    color: #fff;
-    padding: 12px 14px;
+    padding: .7rem .8rem;
     font: inherit;
+    font-size: .97rem;
+    color: var(--texto-principal);
+    background: var(--bg-input);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio);
 }
 
-    .sr-input:focus {
-        outline: none;
-        border-color: var(--azul, #2563eb);
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, .18);
-    }
+.sr-input:focus {
+    outline: none;
+    border-color: var(--marca);
+    box-shadow: 0 0 0 3px rgba(47, 125, 189, .18);
+}
 
-    .sr-input::placeholder {
-        color: var(--texto-fraco, #64748b);
-    }
+.sr-input::placeholder {
+    color: var(--texto-fraco);
+}
 
 .sr-textarea {
+    min-height: 140px;
     resize: vertical;
-    min-height: 120px;
 }
 
-/* ---------- Caixas de seleção ---------- */
 .sr-check {
     display: flex;
     align-items: flex-start;
     gap: 10px;
-    color: var(--texto-suave, #94a3b8);
-    font-size: .9rem;
     margin: 10px 0 4px;
+    font-size: .91rem;
     line-height: 1.45;
+    color: var(--texto-suave);
 }
 
-    .sr-check input {
-        width: 18px;
-        height: 18px;
-        margin-top: 2px;
-        accent-color: #2563eb;
-        flex: 0 0 auto;
-    }
+.sr-check input {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    accent-color: var(--marca);
+}
 
 .sr-check--terms {
     margin-top: 22px;
     padding-top: 18px;
-    border-top: 1px solid var(--borda, #1f2937);
+    border-top: 1px solid var(--borda);
 }
 
-/* ---------- Mensagens e botões ---------- */
 .sr-error {
-    color: #f87171;
-    font-size: .8rem;
     min-height: 1em;
+    font-size: .8rem;
+    color: var(--erro);
 }
 
 .sr-alert {
-    color: #fecaca;
-    background: rgba(220, 38, 38, .12);
-    border: 1px solid rgba(220, 38, 38, .4);
-    border-radius: 10px;
     padding: 10px 12px;
     font-size: .9rem;
+    color: #f3c5bd;
+    background: rgba(180, 70, 55, .16);
+    border: 1px solid rgba(217, 123, 111, .45);
+    border-radius: var(--raio);
 }
 
-    .sr-alert:empty {
-        display: none;
-    }
+.sr-alert:empty {
+    display: none;
+}
 
 .sr-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background: var(--azul, #2563eb);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    padding: 14px 22px;
-    font-size: 1rem;
+    padding: .8rem 1.3rem;
+    font: inherit;
+    font-size: .98rem;
     font-weight: 700;
-    cursor: pointer;
+    color: #fff;
     text-decoration: none;
-    transition: background .15s ease;
+    cursor: pointer;
+    background: var(--marca);
+    border: 1px solid var(--marca);
+    border-radius: var(--raio);
+    transition: background-color .15s ease;
 }
 
-    .sr-btn:hover {
-        background: #1d4ed8;
-        color: #fff;
-        text-decoration: none;
-    }
+.sr-btn:hover {
+    color: #fff;
+    background: var(--marca-escura);
+    text-decoration: none;
+}
 
 .sr-btn--ghost {
+    color: var(--texto-suave);
     background: transparent;
-    border: 1px solid var(--borda, #1f2937);
-    color: var(--texto-suave, #94a3b8);
+    border-color: var(--borda-forte);
 }
 
-    .sr-btn--ghost:hover {
-        background: var(--bg-input, #10141f);
-        color: #fff;
-    }
+.sr-btn--ghost:hover {
+    color: var(--texto-principal);
+    background: var(--bg-input);
+}
 
 .sr-form > .sr-btn {
-    margin-top: 18px;
     align-self: flex-start;
+    margin-top: 18px;
 }
 
 .sr-note {
-    color: var(--texto-fraco, #64748b);
-    font-size: .82rem;
-    line-height: 1.5;
     margin-top: 10px;
+    font-size: .83rem;
+    line-height: 1.5;
+    color: var(--texto-fraco);
+}
+
+.sr-hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+.sr-file {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.sr-file::file-selector-button {
+    padding: 7px 12px;
+    margin-right: 12px;
+    font: inherit;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    background: var(--marca);
+    border: none;
+    border-radius: var(--raio);
+}
+
+.sr-hint {
+    font-size: .78rem;
+    color: var(--texto-fraco);
+}
+
+/* ---------- Acompanhamento ---------- */
+
+.sr-page {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 3.5rem 0 2rem;
+    color: var(--texto-principal);
+}
+
+.sr-header {
+    margin-bottom: 1.8rem;
+}
+
+.sr-eyebrow {
+    display: block;
+    margin-bottom: .45rem;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--cobre-claro);
+}
+
+.sr-title {
+    margin-bottom: .7rem;
+    font-size: clamp(2rem, 4vw, 2.7rem);
+}
+
+.sr-subtitle {
+    max-width: 620px;
+    margin: 0;
+    color: var(--texto-suave);
+}
+
+.sr-card {
+    padding: 1.5rem;
+    background: var(--bg-elevado);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio);
+}
+
+.sr-page .sr-card + .sr-card {
+    margin-top: 1.25rem;
 }
 
 /* ---------- Tela de sucesso ---------- */
+
 .sr-success {
-    text-align: center;
+    text-align: left;
 }
 
 .sr-success-icon {
-    width: 64px;
-    height: 64px;
-    margin: 4px auto 18px;
-    border-radius: 50%;
     display: grid;
     place-items: center;
-    background: rgba(34, 197, 94, .15);
-    color: #4ade80;
-    font-size: 1.8rem;
-    font-weight: 700;
+    width: 46px;
+    height: 46px;
+    margin-bottom: 1rem;
+    color: var(--bg-base);
+    background: var(--sucesso);
+    border-radius: var(--raio);
+}
+
+.sr-success-icon svg {
+    width: 22px;
+    height: 22px;
 }
 
 .sr-protocol {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    max-width: 320px;
-    margin: 24px auto;
-    padding: 18px;
-    background: var(--bg-input, #10141f);
-    border: 1px dashed var(--azul, #2563eb);
-    border-radius: 14px;
+    max-width: 340px;
+    margin: 1.5rem 0;
+    padding: 1rem 1.1rem;
+    background: var(--bg-input);
+    border-left: 3px solid var(--cobre);
 }
 
-    .sr-protocol span {
-        color: var(--texto-fraco, #64748b);
-        font-size: .8rem;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-    }
+.sr-protocol span {
+    font-size: .78rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--texto-fraco);
+}
 
-    .sr-protocol strong {
-        color: #fff;
-        font-size: 1.6rem;
-        letter-spacing: .05em;
-    }
+.sr-protocol strong {
+    font-family: var(--fonte-titulo);
+    font-size: 1.7rem;
+    letter-spacing: .03em;
+    color: var(--texto-principal);
+}
 
 .sr-actions {
     display: flex;
-    justify-content: center;
     flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 22px;
+    gap: 10px;
+    margin-top: 1.25rem;
 }
 
-/* ---------- Celular ---------- */
+/* ---------- Resultado do acompanhamento ---------- */
+
+.sr-tracking {
+    margin-top: 1.25rem;
+}
+
+.sr-tracking-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--borda);
+}
+
+.sr-tracking-label {
+    display: block;
+    font-size: .76rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--texto-fraco);
+}
+
+.sr-tracking-protocol {
+    font-family: var(--fonte-titulo);
+    font-size: 1.45rem;
+    letter-spacing: .03em;
+    color: var(--texto-principal);
+}
+
+.sr-status {
+    display: inline-block;
+    padding: 5px 11px;
+    font-size: .8rem;
+    font-weight: 700;
+    border: 1px solid transparent;
+    border-radius: var(--raio);
+}
+
+.sr-status--amber {
+    color: #f0c46a;
+    background: rgba(201, 138, 60, .14);
+    border-color: rgba(201, 138, 60, .45);
+}
+
+.sr-status--purple {
+    color: #c7b6e6;
+    background: rgba(125, 95, 175, .16);
+    border-color: rgba(125, 95, 175, .45);
+}
+
+.sr-status--blue {
+    color: var(--azul-claro);
+    background: rgba(47, 125, 189, .16);
+    border-color: rgba(47, 125, 189, .45);
+}
+
+.sr-status--cyan {
+    color: #8bc9c9;
+    background: rgba(70, 150, 150, .16);
+    border-color: rgba(70, 150, 150, .45);
+}
+
+.sr-status--green {
+    color: #93c9a6;
+    background: rgba(106, 163, 124, .16);
+    border-color: rgba(106, 163, 124, .45);
+}
+
+.sr-status--gray {
+    color: var(--texto-suave);
+    background: rgba(167, 175, 171, .12);
+    border-color: var(--borda-forte);
+}
+
+.sr-tracking-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 0;
+}
+
+.sr-tracking-grid dt {
+    margin-bottom: 4px;
+    font-size: .76rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--texto-fraco);
+}
+
+.sr-tracking-grid dd {
+    margin: 0;
+    line-height: 1.5;
+    color: var(--texto-principal);
+    overflow-wrap: anywhere;
+}
+
+.sr-tracking-full {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 900px) {
+    .pedido__grade {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .pedido__apoio {
+        max-width: 560px;
+    }
+}
+
 @media (max-width: 640px) {
-    .sr-grid {
+    .pedido,
+    .sr-page {
+        padding-top: 2.5rem;
+    }
+
+    .sr-grid,
+    .sr-tracking-grid {
         grid-template-columns: 1fr;
     }
 
-    .sr-card {
-        padding: 20px;
+    .sr-form > .sr-btn,
+    .sr-actions .sr-btn {
+        width: 100%;
     }
 
-    .sr-form > .sr-btn {
-        width: 100%;
+    .sr-card {
+        padding: 1.15rem;
     }
 }

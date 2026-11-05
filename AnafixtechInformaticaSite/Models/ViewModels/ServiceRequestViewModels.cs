@@ -9,18 +9,18 @@ namespace AnafixtechInformaticaSite.Models.ViewModels
     public class ServiceRequestFormViewModel
     {
         [Display(Name = "Seu nome")]
-        [Required(ErrorMessage = "Informe seu nome."), StringLength(120)]
+        [Required(ErrorMessage = "Informe o nome de quem vamos atender."), StringLength(120)]
         public string ContactName { get; set; } = string.Empty;
 
         [Display(Name = "E-mail")]
-        [Required(ErrorMessage = "Informe o e-mail."), EmailAddress(ErrorMessage = "E-mail inválido."), StringLength(160)]
+        [Required(ErrorMessage = "Informe um e-mail para retorno."), EmailAddress(ErrorMessage = "Confira o e-mail: parece faltar algo no endereço."), StringLength(160)]
         public string ContactEmail { get; set; } = string.Empty;
 
         [Display(Name = "Telefone / WhatsApp")]
-        [Required(ErrorMessage = "Informe um telefone ou WhatsApp."), StringLength(30)]
+        [Required(ErrorMessage = "Informe um telefone com WhatsApp."), StringLength(30)]
         public string ContactPhone { get; set; } = string.Empty;
 
-        [Display(Name = "Endereço")]
+        [Display(Name = "Endereço para busca do equipamento")]
         [StringLength(250)]
         public string? ContactAddress { get; set; } // só é útil quando pedimos para buscar o equipamento
 
@@ -28,15 +28,26 @@ namespace AnafixtechInformaticaSite.Models.ViewModels
         public bool PickupRequested { get; set; }
 
         [Display(Name = "Equipamento")]
-        [Required(ErrorMessage = "Informe o equipamento."), StringLength(120)]
+        [Required(ErrorMessage = "Diga qual é o equipamento (marca e modelo, se souber)."), StringLength(120)]
         public string Device { get; set; } = string.Empty;
 
         [Display(Name = "Serviço desejado")]
         public int? ServiceId { get; set; } // opcional: nem todo mundo sabe qual serviço precisa
 
-        [Display(Name = "Descreva o problema")]
-        [Required(ErrorMessage = "Descreva o problema."), StringLength(2000)]
+        [Display(Name = "O que está acontecendo")]
+        [Required(ErrorMessage = "Conte o que está acontecendo com o equipamento."), StringLength(2000)]
         public string Description { get; set; } = string.Empty;
+
+        // Foto opcional do equipamento (ajuda no diagnóstico antes mesmo do atendimento).
+        // O arquivo NÃO é gravado direto pelo model binding: o controller valida tipo,
+        // tamanho e conteúdo antes de salvar (ver ServiceRequestController.SalvarFotoAsync).
+        [Display(Name = "Foto do equipamento (opcional)")]
+        public IFormFile? Photo { get; set; }
+
+        // Campo "armadilha" contra robôs de spam. Fica escondido no formulário por CSS;
+        // uma pessoa não vê nem preenche, mas muitos robôs preenchem todos os campos.
+        // Se vier preenchido, o envio é descartado.
+        public string? Website { get; set; }
 
         // Consentimento para usar os dados no atendimento (boa prática de privacidade/LGPD).
         [Display(Name = "Autorizo o contato e o uso destes dados para atendimento.")]
@@ -107,5 +118,30 @@ namespace AnafixtechInformaticaSite.Models.ViewModels
         public RequestStatus? Status { get; set; }                                  // filtro atual (nulo = todas)
         public string? Busca { get; set; }                                          // texto digitado
         public Dictionary<RequestStatus, int> ContagemPorStatus { get; set; } = new(); // números dos botões
+    }
+
+    // Consulta pública de protocolo: o cliente informa o protocolo e o e-mail usado no pedido.
+    // A combinação dos dois evita que alguém veja a solicitação de outra pessoa (protocolos
+    // são números sequenciais e fáceis de adivinhar, por isso o e-mail é obrigatório).
+    public class ServiceRequestTrackingViewModel
+    {
+        [Display(Name = "Protocolo")]
+        [Required(ErrorMessage = "Informe o protocolo (ex.: SOL-00012).")]
+        [StringLength(20)]
+        public string Protocolo { get; set; } = string.Empty;
+
+        [Display(Name = "E-mail usado na solicitação")]
+        [Required(ErrorMessage = "Informe o e-mail.")]
+        [EmailAddress(ErrorMessage = "E-mail inválido.")]
+        [StringLength(160)]
+        public string Email { get; set; } = string.Empty;
+
+        // Resultado da busca. Fica nulo quando ainda não pesquisou ou quando não encontrou.
+        [BindNever, ValidateNever]
+        public ServiceRequest? Solicitacao { get; set; }
+
+        // True depois que o formulário foi enviado (diferencia "não encontrado" de "nem tentou").
+        [BindNever, ValidateNever]
+        public bool Buscou { get; set; }
     }
 }

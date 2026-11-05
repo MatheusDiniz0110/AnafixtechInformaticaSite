@@ -1,10 +1,34 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var zap = "https://wa.me/5562998877833?text=" + Uri.EscapeDataString("Olá! Preciso de um orçamento para meu equipamento.");
+    var urlPagina = $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}";
+    var titulo = ViewData["Title"] as string ?? "Assistência técnica em Anápolis";
+    var descricao = ViewData["Description"] as string
+        ?? "Assistência técnica de computadores e notebooks em Anápolis (GO). Diagnóstico, orçamento antes do reparo e garantia de 90 dias.";
+}
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - AnaFixTech Informática</title>
-    <script type="importmap"></script>
+    <title>@titulo | AnaFixTech Informática</title>
+    <meta name="description" content="@descricao" />
+    <meta name="theme-color" content="#0f1417" />
+    <link rel="icon" href="~/favicon.ico" />
+    <link rel="canonical" href="@urlPagina" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="AnaFixTech Informática" />
+    <meta property="og:title" content="@titulo | AnaFixTech Informática" />
+    <meta property="og:description" content="@descricao" />
+    <meta property="og:url" content="@urlPagina" />
+    <meta property="og:image" content="@($"{Context.Request.Scheme}://{Context.Request.Host}/images/og-anafixtech.png")" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/footer.css" asp-append-version="true" />
@@ -12,50 +36,109 @@
 
     @await RenderSectionAsync("Head", required: false)
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-dark border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-controller="Home" asp-action="Index">AnaFixTech Informática</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Services" asp-action="Index">Serviços</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="ServiceRequest" asp-action="Create">Solicitar</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Forum">Fórum</a>
-                        </li>
-                        @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
-                        {
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
-                            </li>
-                        }
-                    </ul>
+<body id="topo">
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+    <symbol id="icone-whatsapp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.2 9.2 0 0 1-3.9-.9L3 20.5l1.4-4.8A8.4 8.4 0 1 1 21 11.5Z" />
+        <path d="M8.6 8.1c.2-.4.4-.4.7-.4h.5c.2 0 .4 0 .5.4l.7 1.7c.1.2 0 .4-.1.6l-.6.7c-.1.1-.2.3-.1.5.5.9 1.3 1.7 2.3 2.2.2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.5-.1l1.7.8c.2.1.3.2.3.4 0 .4-.2 1.2-.6 1.5-.4.4-1 .5-1.7.4-1.9-.3-4.5-2.4-5.4-4.2-.4-.8-.7-1.7-.5-2.4.1-.5.3-.8.6-1.2Z" />
+    </symbol>
+    <symbol id="icone-telefone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.4 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z" />
+    </symbol>
+    <symbol id="icone-email" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="m3 7 9 6 9-6" />
+    </symbol>
+    <symbol id="icone-seta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14" />
+        <path d="m13 6 6 6-6 6" />
+    </symbol>
+    <symbol id="icone-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m4 12 5 5L20 6" />
+    </symbol>
+    <symbol id="icone-mapa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+        <circle cx="12" cy="10" r="2.5" />
+    </symbol>
+    <symbol id="icone-relogio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+    </symbol>
+</svg>
+
+<header class="topo">
+    <div class="faixa-servico">
+        <div class="container faixa-servico__interno">
+            <span class="faixa-servico__esquerda">Assistência técnica em Anápolis e região</span>
+            <span class="faixa-servico__contato">
+                <a href="tel:+5562998877833">(62) 99887-7833</a>
+                @* TODO: preencher com o horário real de atendimento. *@
+                <span>Atendimento com hora marcada</span>
+            </span>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="marca" asp-controller="Home" asp-action="Index" aria-label="AnaFixTech Informática, página inicial">
+                <img src="~/images/logo-256.png" alt="" width="42" height="42" />
+                <span class="marca__texto">AnaFixTech<small>Informática</small></span>
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal"
+                    aria-controls="menuPrincipal" aria-expanded="false" aria-label="Abrir menu">
+                Menu
+            </button>
+
+            <div class="collapse navbar-collapse" id="menuPrincipal">
+                <ul class="navbar-nav menu-principal me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Services" asp-action="Index">Serviços</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Index" asp-fragment="como-funciona">Como funciona</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Forum">Dúvidas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="ServiceRequest" asp-action="Acompanhar">Acompanhar pedido</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Sobre">Sobre</a>
+                    </li>
+                </ul>
+
+                <div class="topo__acoes">
+                    <a class="topo__telefone" href="tel:+5562998877833">(62) 99887-7833</a>
+                    <a class="botao botao--whats botao--pequeno" href="@zap" target="_blank" rel="noopener noreferrer">
+                        <svg aria-hidden="true"><use href="#icone-whatsapp"></use></svg>
+                        Chamar no WhatsApp
+                    </a>
                     <partial name="_LoginPartial" />
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+        </div>
+    </nav>
+</header>
 
-    <partial name="_Footer" />
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+<div class="container">
+    <main role="main">
+        @RenderBody()
+    </main>
+</div>
+
+<partial name="_Footer" />
+
+<a class="whats-fixo" href="@zap" target="_blank" rel="noopener noreferrer" aria-label="Falar no WhatsApp com a AnaFixTech">
+    <svg aria-hidden="true"><use href="#icone-whatsapp"></use></svg>
+    <span>WhatsApp</span>
+</a>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

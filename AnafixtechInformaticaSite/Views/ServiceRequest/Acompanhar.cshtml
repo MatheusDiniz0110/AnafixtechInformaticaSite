@@ -1,0 +1,121 @@
+@*
+    Página PÚBLICA de acompanhamento de solicitação.
+    O cliente informa o protocolo (SOL-00012) e o e-mail usado no pedido.
+    A combinação dos dois é o que libera a consulta — assim ninguém vê o pedido de outra pessoa.
+*@
+@model ServiceRequestTrackingViewModel
+@{
+    ViewData["Title"] = "Acompanhar solicitação";
+    ViewData["Description"] = "Consulte o andamento da sua solicitação de serviço na AnaFixTech usando o protocolo e o e-mail informados no pedido.";
+
+    var pedido = Model.Solicitacao;
+
+    string DataHora(DateTime? valor) => valor?.ToString("dd/MM/yyyy 'às' HH:mm") ?? "—";
+    string DataDia(DateOnly? valor) => valor?.ToString("dd/MM/yyyy") ?? "—";
+}
+
+@section Head {
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="stylesheet" href="~/css/serviceRequest.css" asp-append-version="true" />
+}
+
+<div class="sr-page">
+
+    @* ===== Cabeçalho ===== *@
+    <div class="sr-header">
+        <span class="sr-eyebrow">ACOMPANHAMENTO</span>
+        <h1 class="sr-title">Acompanhar solicitação</h1>
+        <p class="sr-subtitle">
+            Informe o protocolo que você recebeu ao enviar o pedido e o mesmo e-mail usado no formulário.
+        </p>
+    </div>
+
+    <div class="sr-card">
+        <form asp-controller="ServiceRequest" asp-action="Acompanhar" method="post" class="sr-form">
+
+            <div asp-validation-summary="ModelOnly" class="sr-alert"></div>
+
+            <div class="sr-grid">
+                <div class="sr-field">
+                    <label asp-for="Protocolo"></label>
+                    <input asp-for="Protocolo" class="sr-input" placeholder="SOL-00012" autocomplete="off" />
+                    <span asp-validation-for="Protocolo" class="sr-error"></span>
+                </div>
+
+                <div class="sr-field">
+                    <label asp-for="Email"></label>
+                    <input asp-for="Email" class="sr-input" type="email" autocomplete="email" placeholder="voce@exemplo.com" />
+                    <span asp-validation-for="Email" class="sr-error"></span>
+                </div>
+            </div>
+
+            <button type="submit" class="sr-btn">Consultar</button>
+        </form>
+    </div>
+
+    @* ===== Resultado da consulta ===== *@
+    @if (pedido is not null)
+    {
+        <div class="sr-card sr-tracking">
+            <div class="sr-tracking-head">
+                <div>
+                    <span class="sr-tracking-label">Protocolo</span>
+                    <strong class="sr-tracking-protocol">@pedido.Protocolo</strong>
+                </div>
+                <span class="sr-status sr-status--@pedido.Status.ToBadge()">@pedido.Status.ToLabel()</span>
+            </div>
+
+            <dl class="sr-tracking-grid">
+                <div>
+                    <dt>Equipamento</dt>
+                    <dd>@pedido.Device</dd>
+                </div>
+                <div>
+                    <dt>Serviço</dt>
+                    <dd>@(pedido.Service?.Title ?? "A definir no diagnóstico")</dd>
+                </div>
+                <div>
+                    <dt>Recebida em</dt>
+                    <dd>@DataHora(pedido.RequestDate)</dd>
+                </div>
+                <div>
+                    <dt>Concluída em</dt>
+                    <dd>@DataDia(pedido.CompletionDate)</dd>
+                </div>
+                <div class="sr-tracking-full">
+                    <dt>Problema relatado</dt>
+                    <dd>@pedido.Description</dd>
+                </div>
+            </dl>
+
+            <p class="sr-note">
+                A situação é atualizada pela equipe da AnaFixTech conforme o atendimento avança.
+                Para falar sobre o orçamento, use o WhatsApp e informe o protocolo @pedido.Protocolo.
+            </p>
+
+            <div class="sr-actions">
+                <a class="sr-btn"
+                   href="https://wa.me/5562998877833?text=@Uri.EscapeDataString($"Olá! Gostaria de falar sobre a solicitação {pedido.Protocolo}.")"
+                   target="_blank" rel="noopener noreferrer">
+                    Falar no WhatsApp
+                </a>
+                <a class="sr-btn sr-btn--ghost" asp-controller="Home" asp-action="Index">Voltar ao início</a>
+            </div>
+        </div>
+    }
+    else if (Model.Buscou)
+    {
+        @* Quando o formulário foi enviado e nada foi encontrado. *@
+        <div class="sr-card sr-alert" role="status">
+            <strong>Não encontramos essa solicitação.</strong>
+            Confira se o protocolo e o e-mail estão exatamente como foram informados no pedido.
+            Se preferir, fale com a gente no WhatsApp.
+        </div>
+    }
+
+</div>
+
+@* Validação no navegador (mesmo padrão do formulário de solicitação). *@
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,89 @@
+@{
+    ViewData["Title"] = "Dúvidas frequentes";
+    ViewData["Description"] = "Dúvidas sobre o atendimento da AnaFixTech em Anápolis: orçamento, prazo, garantia, busca do equipamento e acompanhamento da solicitação.";
+
+    var perguntas = new (string Pergunta, string Resposta)[]
+    {
+        ("Quanto custa o conserto?",
+         "O valor depende do diagnóstico. Você recebe um orçamento antes de qualquer serviço começar e só autoriza se concordar. A avaliação inicial pode ser combinada pelo WhatsApp."),
+
+        ("Quanto tempo leva?",
+         "A maioria dos serviços fica pronta entre 24 e 96 horas. Quando é necessário aguardar peças, avisamos o prazo pelo contato informado na solicitação."),
+
+        ("O serviço tem garantia?",
+         "Sim. Os serviços têm 90 dias de garantia para o problema identificado no atendimento."),
+
+        ("Vocês buscam o equipamento em casa?",
+         "Sim, em Anápolis. Marque a opção de busca no formulário de solicitação e informe o endereço. Também é possível levar e retirar o equipamento na bancada."),
+
+        ("Preciso criar conta para solicitar?",
+         "Não. O formulário de solicitação é aberto a qualquer visitante. Ter uma conta só facilita preencher os dados e acompanhar os pedidos."),
+
+        ("Como acompanho o andamento?",
+         "Ao enviar a solicitação você recebe um protocolo (por exemplo, SOL-00012). Use a página de acompanhamento com o protocolo e o e-mail informado para ver a situação atual."),
+
+        ("Meus dados e fotos estão seguros?",
+         "Os dados são usados apenas para atender a sua solicitação e não são compartilhados com terceiros. Os detalhes estão na Política de Privacidade."),
+
+        ("Vocês instalam programas pagos?",
+         "Sim, com a licença do cliente. Não fornecemos licença e não instalamos versão pirata.")
+    };
+
+    var faqEstruturado = new Dictionary<string, object?>
+    {
+        ["@context"] = "https://schema.org",
+        ["@type"] = "FAQPage",
+        ["mainEntity"] = perguntas.Select(p => new Dictionary<string, object?>
+        {
+            ["@type"] = "Question",
+            ["name"] = p.Pergunta,
+            ["acceptedAnswer"] = new Dictionary<string, object?>
+            {
+                ["@type"] = "Answer",
+                ["text"] = p.Resposta
+            }
+        }).ToArray()
+    };
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/forum.css" asp-append-version="true" />
+    <script type="application/ld+json">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(faqEstruturado))
+    </script>
+}
+
+<div class="duvidas">
+    <header class="duvidas__topo">
+        <span class="rotulo">Dúvidas frequentes</span>
+        <h1>O que perguntam antes de deixar o equipamento.</h1>
+        <p>
+            Estas são as dúvidas que mais chegam pelo WhatsApp. Se a sua não estiver aqui,
+            mande uma mensagem ou abra uma solicitação.
+        </p>
+    </header>
+
+    <section class="duvidas__lista" aria-label="Perguntas frequentes">
+        @foreach (var item in perguntas)
+        {
+            <details>
+                <summary>@item.Pergunta</summary>
+                <p>@item.Resposta</p>
+            </details>
+        }
+    </section>
+
+    <section class="duvidas__chamada">
+        <div>
+            <h2>Ainda ficou dúvida?</h2>
+            <p>Chame no WhatsApp ou descreva o problema pelo formulário. O atendimento é feito pelo Matheus.</p>
+        </div>
+        <div class="duvidas__acoes">
+            <a class="botao botao--whats" href="https://wa.me/5562998877833?text=@Uri.EscapeDataString("Olá! Tenho uma dúvida sobre o atendimento.")" target="_blank" rel="noopener noreferrer">
+                <svg aria-hidden="true"><use href="#icone-whatsapp"></use></svg>
+                Chamar no WhatsApp
+            </a>
+            <a class="botao botao--linha" asp-controller="ServiceRequest" asp-action="Create">Abrir solicitação</a>
+        </div>
+    </section>
+</div>

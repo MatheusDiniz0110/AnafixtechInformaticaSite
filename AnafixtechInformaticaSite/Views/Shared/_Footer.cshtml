@@ -1,53 +1,67 @@
-@*
-    Rodapé global do site. Usado em todas as páginas via _Layout.cshtml: <partial name="_Footer" />
-    Estilos: wwwroot/css/footer.css
-    Se a empresa tiver CNPJ, acrescente uma linha na barra inferior (ex.: CNPJ 00.000.000/0001-00).
-*@
 @{
     var ano = DateTime.Now.Year;
+    var zap = "https://wa.me/5562998877833?text=" + Uri.EscapeDataString("Olá! Preciso de um orçamento para meu equipamento.");
 }
 
 <footer class="site-footer" aria-label="Rodapé do site">
     <div class="site-footer__inner">
-
-        <div class="site-footer__brand">
+        <div class="site-footer__marca">
             <a class="site-footer__logo" asp-controller="Home" asp-action="Index">AnaFixTech <span>Informática</span></a>
-            <p>Assistência técnica especializada e soluções em tecnologia em Anápolis (GO). Rapidez, transparência e garantia de 90 dias.</p>
-            <ul class="site-footer__pills" aria-label="Canais de atendimento">
-                <li><a href="https://wa.me/5562998877833" target="_blank" rel="noopener noreferrer">WhatsApp</a></li>
-                <li><a href="https://www.instagram.com/anafixtech_informatica15" target="_blank" rel="noopener noreferrer">Instagram</a></li>
-            </ul>
+            <p>
+                Conserto e manutenção de computadores, notebooks e periféricos em Anápolis.
+                Diagnóstico na bancada, orçamento antes do reparo e garantia de 90 dias no serviço.
+            </p>
+            <a class="site-footer__zap" href="@zap" target="_blank" rel="noopener noreferrer">
+                <svg aria-hidden="true"><use href="#icone-whatsapp"></use></svg>
+                Chamar no WhatsApp
+            </a>
         </div>
 
-        <nav class="site-footer__col" aria-label="Navegação do rodapé">
-            <h2>Navegação</h2>
+        <nav class="site-footer__col" aria-label="Serviços">
+            <h2>Serviços</h2>
             <ul>
-                <li><a asp-controller="Home" asp-action="Index">Home</a></li>
-                <li><a asp-controller="Services" asp-action="Index">Serviços</a></li>
-                <li><a asp-controller="Home" asp-action="Sobre">Sobre</a></li>
-                <li><a asp-controller="Home" asp-action="Privacy">Política de Privacidade</a></li>
+                <li><a asp-controller="Services" asp-action="Index" asp-route-categoria="Software">Software e sistema</a></li>
+                <li><a asp-controller="Services" asp-action="Index" asp-route-categoria="Hardware">Hardware e limpeza</a></li>
+                <li><a asp-controller="Services" asp-action="Index" asp-route-categoria="Dados">Backup e dados</a></li>
+                <li><a asp-controller="Services" asp-action="Index">Catálogo completo</a></li>
             </ul>
         </nav>
 
-        <address class="site-footer__col">
+        <nav class="site-footer__col" aria-label="Atendimento">
+            <h2>Atendimento</h2>
+            <ul>
+                <li><a asp-controller="ServiceRequest" asp-action="Create">Solicitar orçamento</a></li>
+                <li><a asp-controller="ServiceRequest" asp-action="Acompanhar">Acompanhar pedido</a></li>
+                <li><a asp-controller="Home" asp-action="Forum">Dúvidas frequentes</a></li>
+                <li><a asp-controller="Home" asp-action="Sobre">Sobre a AnaFixTech</a></li>
+            </ul>
+        </nav>
+
+        <address class="site-footer__col site-footer__contato">
             <h2>Contato</h2>
             <ul>
                 <li><a href="https://wa.me/5562998877833" target="_blank" rel="noopener noreferrer">(62) 99887-7833</a></li>
                 <li><a href="mailto:matheus.diniz.t@outlook.com">matheus.diniz.t@outlook.com</a></li>
-                <li><span>Anápolis — Goiás</span></li>
+                <li><a href="https://www.instagram.com/anafixtech_informatica15" target="_blank" rel="noopener noreferrer">@@anafixtech_informatica15</a></li>
             </ul>
+
+            <p class="site-footer__local">
+                Anápolis, Goiás<br />
+                @* TODO: preencher com o endereço real da bancada e o horário de atendimento. *@
+                Endereço e horário confirmados pelo WhatsApp.
+            </p>
         </address>
     </div>
 
     <div class="site-footer__bottom">
         <div class="site-footer__bottom-inner">
-            <p>&copy; @ano AnaFixTech Informática. Todos os direitos reservados.</p>
+            <p>&copy; @ano AnaFixTech Informática</p>
             <p>
                 <a asp-controller="Home" asp-action="Privacy">Política de Privacidade</a>
                 <span aria-hidden="true">·</span>
-                Desenvolvido por <a href="https://github.com/MatheusDiniz0110" target="_blank" rel="noopener noreferrer">Matheus Diniz Tereza</a>
+                Site feito por <a href="https://github.com/MatheusDiniz0110" target="_blank" rel="noopener noreferrer">Matheus Diniz Tereza</a>
                 <span aria-hidden="true">·</span>
-                <a href="#" class="site-footer__top">Voltar ao topo ↑</a>
+                <a href="#topo">Voltar ao topo</a>
             </p>
         </div>
     </div>

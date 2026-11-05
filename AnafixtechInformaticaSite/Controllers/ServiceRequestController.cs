@@ -23,10 +23,21 @@ namespace AnafixtechInformaticaSite.Controllers
         // Acesso ao banco, recebido por injeção de dependência.
         private readonly AppDbContext _context;
 
-        public ServiceRequestController(AppDbContext context)
+        // Acesso às pastas do site (wwwroot) para salvar a foto do equipamento.
+        private readonly IWebHostEnvironment _ambiente;
+
+        public ServiceRequestController(AppDbContext context, IWebHostEnvironment ambiente)
         {
             _context = context;
+            _ambiente = ambiente;
         }
+
+        // Limite do arquivo de foto aceito no formulário público (5 MB).
+        private const long TamanhoMaximoFoto = 5 * 1024 * 1024;
+
+        // Extensões aceitas. A checagem real também olha os bytes iniciais do arquivo,
+        // porque só o nome/extensão pode ser falsificado.
+        private static readonly string[] ExtensoesFotoPermitidas = { ".jpg", ".jpeg", ".png", ".webp" };
 
         // =========================================================================================
         // FORMULÁRIO PÚBLICO
@@ -54,6 +65,16 @@ namespace AnafixtechInformaticaSite.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(ServiceRequestFormViewModel vm)
         {
+            // Armadilha anti-spam: o campo "Website" fica escondido por CSS. Se veio preenchido,
+            // quem enviou foi um robô. Respondemos como se tivesse dado certo, sem gravar nada,
+            // para não ensinar ao robô que a armadilha funcionou.
+            if (!string.IsNullOrWhiteSpace(vm.Website))
+            {
+                TempData["Protocolo"] = "";
+                TempData["NomeSolicitante"] = "";
+                return RedirectToAction(nameof(Sucesso));
+            }
+
             // O consentimento é obrigatório: sem ele não podemos usar os dados para responder.
             if (!vm.AcceptPrivacy)
                 ModelState.AddModelError(nameof(vm.AcceptPrivacy), "É preciso autorizar o contato para enviar a solicitação.");
@@ -74,6 +95,22 @@ namespace AnafixtechInformaticaSite.Controllers
             {
                 await CarregarServicosAsync(vm);
                 return View(vm);
+            }
+
+            // ---------- Foto do equipamento (opcional) ----------
+            // Só chega aqui se o restante do formulário estiver válido, para não gravar
+            // arquivo de um envio que será recusado.
+            string? caminhoFoto = null;
+            if (vm.Photo is not null && vm.Photo.Length > 0)
+            {
+                caminhoFoto = await SalvarFotoAsync(vm.Photo);
+
+                // O método devolve null quando o arquivo é inválido e já registrou o erro.
+                if (caminhoFoto is null)
+                {
+                    await CarregarServicosAsync(vm);
+                    return View(vm);
+                }
             }
 
             // Monta a solicitação com os dados digitados.
@@ -97,7 +134,8 @@ namespace AnafixtechInformaticaSite.Controllers
                 // Controle
                 Status = RequestStatus.Pending,   // toda solicitação nasce pendente
                 RequestDate = Clock.Now,          // hora de Brasília
-                UserId = ObterUsuarioLogadoId()   // null quando o visitante não está logado
+                UserId = ObterUsuarioLogadoId(),  // null quando o visitante não está logado
+                PhotoPath = caminhoFoto           // null quando não anexou foto
             };
 
             _context.ServiceRequests.Add(solicitacao);
@@ -139,8 +177,111 @@ namespace AnafixtechInformaticaSite.Controllers
         }
 
         // =========================================================================================
+        // ACOMPANHAMENTO PÚBLICO POR PROTOCOLO
+        // =========================================================================================
+
+        // Abre a página de consulta.  →  GET /ServiceRequest/Acompanhar
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult Acompanhar()
+        {
+            return View(new ServiceRequestTrackingViewModel());
+        }
+
+        // Recebe protocolo + e-mail e mostra a situação atual.  →  POST /ServiceRequest/Acompanhar
+        [AllowAnonymous]
+        [HttpPost]
+        public async Task<IActionResult> Acompanhar(ServiceRequestTrackingViewModel vm)
+        {
+            vm.Buscou = true;
+
+            if (!ModelState.IsValid) return View(vm);
+
+            // O protocolo é "SOL-00012". Extraímos apenas os números para chegar ao Id.
+            var digitos = new string(vm.Protocolo.Where(char.IsDigit).ToArray());
+            if (!int.TryParse(digitos, out var id))
+            {
+                ModelState.AddModelError(nameof(vm.Protocolo), "Protocolo inválido. Use o formato SOL-00012.");
+                return View(vm);
+            }
+
+            var email = vm.Email.Trim().ToLowerInvariant();
+
+            // Só devolve a solicitação quando o e-mail informado é o mesmo do pedido.
+            // Isso impede que alguém veja dados de terceiros apenas trocando o número do protocolo.
+            // AsNoTracking: consulta somente leitura, nada é alterado no banco.
+            vm.Solicitacao = await _context.ServiceRequests
+                .AsNoTracking()
+                .Include(s => s.Service)
+                .FirstOrDefaultAsync(s => s.Id == id && s.ContactEmail.ToLower() == email);
+
+            return View(vm);
+        }
+
+        // =========================================================================================
         // MÉTODOS AUXILIARES (privados)
         // =========================================================================================
+
+        // Valida e grava a foto do equipamento em wwwroot/uploads/requests.
+        // Devolve o caminho público (ex.: /uploads/requests/abc.jpg) ou null se o arquivo não servir.
+        private async Task<string?> SalvarFotoAsync(IFormFile foto)
+        {
+            // 1) Tamanho
+            if (foto.Length > TamanhoMaximoFoto)
+            {
+                ModelState.AddModelError(nameof(ServiceRequestFormViewModel.Photo),
+                    "A foto pode ter no máximo 5 MB.");
+                return null;
+            }
+
+            // 2) Extensão: barra arquivos executáveis (.exe, .php...) com nome disfarçado
+            var extensao = Path.GetExtension(foto.FileName).ToLowerInvariant();
+            if (!ExtensoesFotoPermitidas.Contains(extensao))
+            {
+                ModelState.AddModelError(nameof(ServiceRequestFormViewModel.Photo),
+                    "Envie uma imagem JPG, PNG ou WEBP.");
+                return null;
+            }
+
+            // 3) Conteúdo: confere os primeiros bytes. É o que garante que é mesmo uma imagem,
+            //    e não um programa renomeado para .jpg.
+            await using var leitura = foto.OpenReadStream();
+            var cabecalho = new byte[12];
+            var lidos = await leitura.ReadAsync(cabecalho.AsMemory(0, cabecalho.Length));
+
+            var ehJpg = lidos >= 3 && cabecalho[0] == 0xFF && cabecalho[1] == 0xD8 && cabecalho[2] == 0xFF;
+            var ehPng = lidos >= 8 && cabecalho[0] == 0x89 && cabecalho[1] == 0x50 &&
+                        cabecalho[2] == 0x4E && cabecalho[3] == 0x47;
+            var ehWebp = lidos >= 12 && cabecalho[0] == 0x52 && cabecalho[1] == 0x49 &&
+                         cabecalho[2] == 0x46 && cabecalho[3] == 0x46 &&
+                         cabecalho[8] == 0x57 && cabecalho[9] == 0x45 &&
+                         cabecalho[10] == 0x42 && cabecalho[11] == 0x50;
+
+            if (!(ehJpg || ehPng || ehWebp))
+            {
+                ModelState.AddModelError(nameof(ServiceRequestFormViewModel.Photo),
+                    "O arquivo enviado não parece ser uma imagem válida.");
+                return null;
+            }
+
+            // 4) Gravação com nome aleatório (GUID): evita nomes repetidos e impede que alguém
+            //    adivinhe o endereço da foto de outra pessoa.
+            var pasta = Path.Combine(_ambiente.WebRootPath, "uploads", "requests");
+            Directory.CreateDirectory(pasta);
+
+            var nomeArquivo = $"{Guid.NewGuid():N}{extensao}";
+            var caminhoCompleto = Path.Combine(pasta, nomeArquivo);
+
+            // Volta o ponteiro ao início antes de copiar o arquivo inteiro.
+            leitura.Position = 0;
+
+            await using (var destino = System.IO.File.Create(caminhoCompleto))
+            {
+                await leitura.CopyToAsync(destino);
+            }
+
+            return $"/uploads/requests/{nomeArquivo}";
+        }
 
         // Preenche a lista de serviços do <select>, em ordem alfabética.
         private async Task CarregarServicosAsync(ServiceRequestFormViewModel vm)

@@ -1,22 +1,43 @@
 ﻿@model AnafixtechInformaticaSite.Models.LoginViewModel
+@{
+    ViewData["Title"] = "Entrar";
+    ViewData["Description"] = "Acesse sua conta da AnaFixTech Informática para acompanhar pedidos e solicitações de serviço.";
+}
 
-<h2>Login</h2>
+<div class="acesso">
+    <div class="acesso__caixa">
+        <span class="rotulo">Área do cliente</span>
+        <h1>Entrar</h1>
+        <p class="acesso__texto">
+            Use o e-mail e a senha cadastrados para acompanhar seus pedidos.
+            Se você só quer pedir um orçamento, não precisa de conta.
+        </p>
 
-<form asp-action="Login" method="post">
-    <div>
-        <label>Email</label>
-        <input asp-for="Email"
-               class="form-control" />
+        <form asp-controller="Account" asp-action="Login" method="post">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label">E-mail</label>
+                <input asp-for="Email" class="form-control" type="email" autocomplete="email" placeholder="voce@exemplo.com" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label">Senha</label>
+                <input asp-for="Password" class="form-control" type="password" autocomplete="current-password" placeholder="Sua senha" />
+                <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
+
+            <button type="submit" class="botao w-100">Entrar</button>
+
+            <p class="acesso__rodape">
+                Ainda não tem conta?
+                <a asp-controller="Account" asp-action="Register">Criar conta</a>
+            </p>
+        </form>
     </div>
-    <div>
-        <label>Senha</label>
-        <input asp-for="Password"
-               type="password"
-               class="form-control" />
-    </div>
-    <br />
-    <button type="submit">
-        Entrar
-    </button>
-    <div asp-validation-summary="All"></div>
-</form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

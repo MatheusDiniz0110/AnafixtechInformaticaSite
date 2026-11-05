@@ -1,0 +1,111 @@
+/* Dúvidas frequentes. Mesmo padrão de lista do restante do site. */
+
+.duvidas {
+    max-width: 860px;
+    padding: 3.5rem 0 2rem;
+}
+
+.duvidas__topo {
+    margin-bottom: 2.5rem;
+}
+
+.duvidas__topo h1 {
+    margin-bottom: .9rem;
+    font-size: clamp(2.3rem, 5vw, 3.4rem);
+}
+
+.duvidas__topo p {
+    max-width: 620px;
+    margin: 0;
+    color: var(--texto-suave);
+}
+
+.duvidas__lista {
+    border-top: 1px solid var(--borda);
+}
+
+.duvidas__lista details {
+    border-bottom: 1px solid var(--borda);
+}
+
+.duvidas__lista summary {
+    position: relative;
+    padding: 1.05rem 2.2rem 1.05rem 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--texto-principal);
+    cursor: pointer;
+    list-style: none;
+}
+
+.duvidas__lista summary::-webkit-details-marker {
+    display: none;
+}
+
+.duvidas__lista summary::after {
+    content: "+";
+    position: absolute;
+    top: .95rem;
+    right: 0;
+    font-family: var(--fonte-titulo);
+    font-size: 1.45rem;
+    line-height: 1;
+    color: var(--cobre);
+}
+
+.duvidas__lista details[open] summary::after {
+    content: "–";
+}
+
+.duvidas__lista p {
+    max-width: 700px;
+    margin: 0;
+    padding: 0 0 1.25rem;
+    color: var(--texto-suave);
+}
+
+.duvidas__chamada {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2rem;
+    align-items: end;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--borda-forte);
+}
+
+.duvidas__chamada h2 {
+    margin-bottom: .45rem;
+}
+
+.duvidas__chamada p {
+    max-width: 480px;
+    margin: 0;
+    color: var(--texto-suave);
+}
+
+.duvidas__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .65rem;
+}
+
+@media (max-width: 720px) {
+    .duvidas {
+        padding-top: 2.5rem;
+    }
+
+    .duvidas__chamada {
+        grid-template-columns: 1fr;
+        align-items: start;
+    }
+
+    .duvidas__acoes {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .duvidas__acoes .botao {
+        width: 100%;
+    }
+}

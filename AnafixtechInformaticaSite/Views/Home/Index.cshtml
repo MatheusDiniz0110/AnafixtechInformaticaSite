@@ -1,246 +1,254 @@
-﻿@model AnafixtechInformaticaSite.Models.HomePageInformation
-@{
-    ViewData["Title"] = "Página Inicial";
+﻿@{
+    ViewData["Title"] = "Assistência técnica de computador e notebook em Anápolis";
+    ViewData["Description"] = "Conserto de computador e notebook em Anápolis (GO). Diagnóstico na bancada, orçamento antes do reparo, backup e recuperação de dados. Garantia de 90 dias no serviço.";
+
+    var zap = "https://wa.me/5562998877833?text=" + Uri.EscapeDataString("Olá! Preciso de um orçamento para meu equipamento.");
+
+    var urlSite = $"{Context.Request.Scheme}://{Context.Request.Host}";
+    var dadosEstruturados = new Dictionary<string, object?>
+    {
+        ["@context"] = "https://schema.org",
+        ["@type"] = "LocalBusiness",
+        ["name"] = "AnaFixTech Informática",
+        ["description"] = "Assistência técnica de computadores e notebooks em Anápolis (GO): manutenção, formatação, backup, recuperação de dados e suporte.",
+        ["url"] = urlSite,
+        ["telephone"] = "+5562998877833",
+        ["email"] = "matheus.diniz.t@outlook.com",
+        ["image"] = urlSite + "/images/og-anafixtech.png",
+        ["address"] = new Dictionary<string, object?>
+        {
+            ["@type"] = "PostalAddress",
+            ["addressLocality"] = "Anápolis",
+            ["addressRegion"] = "GO",
+            ["addressCountry"] = "BR"
+        },
+        ["areaServed"] = "Anápolis e região",
+        ["sameAs"] = new[] { "https://www.instagram.com/anafixtech_informatica15" }
+    };
 }
 
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AnaFixTech Informática</title>
-    <link rel="stylesheet" href="~/css/style.css" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-    <style>
-            .arredondada {
-                border-radius: 20px; /* Altere o valor para mais ou menos arredondado */
-                width: 300px;
-                height: 300px;
-                object-fit: cover;
-            }
-    </style>
-</head>
-<body>
-    <section class="hero">
-        <div class="hero-content">
-            <span class="tag">
-                ● Assistência Técnica Especializada
-            </span>
-            <h1>
-                Soluções em<br>
-                <strong>Tecnologia</strong>
-            </h1>
-            <p>
-                Especialistas em manutenção de computadores,
-                recuperação de dados e suporte técnico.
-                Transformamos problemas em soluções com rapidez e qualidade.
-            </p>
-            <div class="buttons">
-                @* Botão embrulhado em <a>: <button> não navega sozinho com href. *@
-                <a href="@Url.Action("Create", "ServiceRequest")" style="text-decoration:none">
-                    <button>
-                        Solicitar Serviço →
-                    </button>
-                </a>
-                <button class="light">
-                    Ver Serviços
-                </button>
-            </div>
-            <div class="features">
-                <div>
-                    <i class="fa-solid fa-shield"></i>
-                    <h4>Garantia</h4>
-                    <p>90 dias</p>
-                </div>
-                <div>
-                    <i class="fa-regular fa-clock"></i>
-                    <h4>Rápido</h4>
-                    <p>24-96h</p>
-                </div>
-                <div>
-                    <i class="fa-solid fa-award"></i>
-                    <h4>Qualidade</h4>
-                    <p>Certificados</p>
-                </div>
-            </div>
-        </div>
-        <div class="brand-card">
-            <img src="logo.ico" alt="Logo AnaFixTech" class="arredondada">
+@section Head {
+    <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+    <script type="application/ld+json">
+        @Html.Raw(System.Text.Json.JsonSerializer.Serialize(dadosEstruturados))
+    </script>
+}
 
-        </div>
-    </section>
-
-    <section class="stats">
-        <div>
-            <h2>@Model.ServicesPerformed</h2>
-            <p>Serviços Realizados</p>
-            <span>
-                Serviço realizado com credibilidade e qualidade
-            </span>
-        </div>
-        <div>
-            <h2>@Model.SatisfiedCustomers</h2>
-            <p>Clientes Satisfeitos</p>
-            <span>
-                Maioria dos clientes ficaram satisfeitos
-            </span>
-        </div>
-        <div>
-            <h2>@Model.DeliveryTime.ToString()h</h2>
-            <p>Prazo Médio de Entrega</p>
-            <span>
-                Entregas realizadas com excelência
-            </span>
-        </div>
-        <div>
-            <h2>@Model.SatisfactionIndex.ToString()%</h2>
-            <p>Índice de Satisfação</p>
-            <span>
-                Maioria dos clientes satisfeitos
-            </span>
-        </div>
-    </section>
-
-    <section class="services">
-        <div class="title">
-            <span>NOSSOS SERVIÇOS</span>
-            <h1>
-                O que fazemos de melhor
-            </h1>
-            <p>
-                Oferecemos uma gama completa de serviços técnicos
-                para manter seus equipamentos funcionando perfeitamente.
-            </p>
-        </div>
-        <div class="cards">
-            <div class="card blue">
-                <i class="fa-solid fa-desktop"></i>
-                <h3>Manutenção de PC</h3>
-                <p>
-                    Formatação, limpeza, upgrades e otimização de desempenho.
-                </p>
-            </div>
-            <div class="card green">
-                <i class="fa-solid fa-hard-drive"></i>
-                <h3>Recuperação de Dados</h3>
-                <p>
-                    Recuperamos arquivos perdidos de HDs, SSDs e pendrives.
-                </p>
-            </div>
-            <div class="card cyan">
-                <i class="fa-solid fa-wifi"></i>
-                <h3>Redes & Internet</h3>
-                <p>
-                    Configuração de redes, roteadores e resolução de problemas.
-                </p>
-            </div>
-            <div class="card purple">
-                <i class="fa-solid fa-database"></i>
-                <h3>Backup & Segurança</h3>
-                <p>
-                    Soluções de backup e proteção contra vírus.
-                </p>
-            </div>
-            <div class="card orange">
-                <i class="fa-solid fa-gear"></i>
-                <h3>Instalação de Software</h3>
-                <p>
-                    Instalação e configuração de sistemas.
-                </p>
-            </div>
-            <div class="card pink">
-                <i class="fa-solid fa-mobile"></i>
-                <h3>Dispositivos Móveis</h3>
-                <p>
-                    Suporte técnico para tablets e smartphones.
-                </p>
-            </div>
-        </div>
-        <button class="more">
-            Ver todos os serviços →
-        </button>
-    </section>
-    <section class="contact">
-        <h1>
-            Precisa de ajuda?
-        </h1>
-        <p>
-            Entre em contato conosco e resolva seu problema tecnológico hoje mesmo.
+<section class="abertura">
+    <div class="abertura__texto">
+        <span class="rotulo">Conserto e manutenção em Anápolis</span>
+        <h1>Computador e notebook:<br />diagnóstico antes do orçamento.</h1>
+        <p class="abertura__lead">
+            A AnaFixTech faz manutenção de computadores, instalação de sistemas, backup e recuperação de dados.
+            O equipamento é avaliado na bancada e você recebe o valor antes de qualquer reparo começar.
         </p>
-        <div>
-            @* Botão embrulhado em <a>: <button> não navega sozinho com href. *@
-            <a href="@Url.Action("Create", "ServiceRequest")" style="text-decoration:none">
-                <button>
-                    Abrir Solicitação →
-                </button>
+        <div class="abertura__acoes">
+            <a class="botao botao--whats" href="@zap" target="_blank" rel="noopener noreferrer">
+                <svg aria-hidden="true"><use href="#icone-whatsapp"></use></svg>
+                Chamar no WhatsApp
             </a>
-            <button href="https://localhost:7160/Home/Forum">
-                💬 Tirar Dúvidas
-            </button>
+            <a class="botao botao--linha" asp-controller="ServiceRequest" asp-action="Create">
+                Solicitar orçamento
+            </a>
         </div>
-        <a href="https://wa.me/5562998877833">
-            ☎ (62) 998877833
-        </a>
-
-        <a href="mailto:matheus.diniz.t@outlook.com">
-            ✉ matheus.diniz.t@outlook.com
-        </a>
-
-    </section>
-    @*     ✉ matheus.diniz.t@outlook.com
-    ☎ (62) 998877833
-        <section class="reviews">
-        <span>
-            avaliações
-        </span>
-        <h1>
-            o que nossos clientes dizem
-        </h1>
-        <div class="stars">
-            ★★★★★
-        </div>
-        <div class="review-box">
-            <div>
-                ★★★★★
-                <p>
-                    "excelente profissional, super educado,
-                    gostei muito do trabalho."
-                </p>
-                <b>
-                    mayara silva
-                </b>
-            </div>
-        </div>
-        <button>
-            💬 deixar avaliação
-        </button>
-    </section> *@
-    <section class="social">
-        <h2>
-            Siga-nos nas redes sociais
-        </h2>
-        <p>
-            Fique por dentro das novidades e dicas de tecnologia
+        <p class="abertura__nota">
+            Atendimento em Anápolis. A busca e a entrega do equipamento são combinadas pelo WhatsApp.
         </p>
+    </div>
+
+    <aside class="ficha" aria-labelledby="ficha-titulo">
+        <span class="ficha__numero">Antes de trazer</span>
+        <h2 id="ficha-titulo">O que ajuda no atendimento</h2>
+        <ul>
+            <li>Faça backup dos arquivos que não podem ser perdidos. Se não conseguir, avise no contato.</li>
+            <li>Traga o carregador. Em notebook, traga também a senha de acesso.</li>
+            <li>Anote quando o problema começou e o que aparece na tela.</li>
+            <li>Se puder, envie uma foto do equipamento pelo formulário.</li>
+        </ul>
+        <a class="ficha__link" asp-controller="ServiceRequest" asp-action="Create">
+            Abrir solicitação
+            <svg aria-hidden="true"><use href="#icone-seta"></use></svg>
+        </a>
+    </aside>
+</section>
+
+<section class="secao" id="servicos">
+    <div class="secao__cabecalho">
         <div>
-            <a href="https://www.instagram.com/anafixtech_informatica15/" target="_blank" rel="noopener noreferrer">
-                <button type="button">
-                    Instagram
-                </button>
-            </a>
-            @* <button>
-                Facebook
-            </button>
-            <button>
-                Twitter
-            </button>
-            <button>
-                YouTube
-            </button>
-            <button>
-                LinkedIn
-            </button> *@
+            <span class="rotulo">Serviços</span>
+            <h2 class="titulo-secao">O que a bancada resolve</h2>
         </div>
-    </section>
-</body>
-</html>
+        <p>
+            O catálogo tem 26 serviços, com valor de referência e a descrição do que está incluso.
+            O valor final depende do diagnóstico.
+        </p>
+    </div>
+
+    <div class="grupos">
+        <article class="grupo">
+            <span class="grupo__numero">01</span>
+            <div class="grupo__corpo">
+                <h3>Software e sistema</h3>
+                <p>Formatação e instalação do Windows ou Linux, Office, antivírus, drivers, correção de erros de inicialização e otimização.</p>
+            </div>
+            <a class="grupo__link" asp-controller="Services" asp-action="Index" asp-route-categoria="Software">
+                Ver serviços
+                <svg aria-hidden="true"><use href="#icone-seta"></use></svg>
+            </a>
+        </article>
+
+        <article class="grupo">
+            <span class="grupo__numero">02</span>
+            <div class="grupo__corpo">
+                <h3>Hardware e limpeza</h3>
+                <p>Limpeza interna, troca de pasta térmica, SSD, memória, fonte, cooler, teclado, tela e montagem de computador.</p>
+            </div>
+            <a class="grupo__link" asp-controller="Services" asp-action="Index" asp-route-categoria="Hardware">
+                Ver serviços
+                <svg aria-hidden="true"><use href="#icone-seta"></use></svg>
+            </a>
+        </article>
+
+        <article class="grupo">
+            <span class="grupo__numero">03</span>
+            <div class="grupo__corpo">
+                <h3>Backup e dados</h3>
+                <p>Backup de arquivos pessoais, rotina automática, clonagem de HD para SSD, migração do sistema e recuperação de arquivos apagados.</p>
+            </div>
+            <a class="grupo__link" asp-controller="Services" asp-action="Index" asp-route-categoria="Dados">
+                Ver serviços
+                <svg aria-hidden="true"><use href="#icone-seta"></use></svg>
+            </a>
+        </article>
+    </div>
+
+    <p class="secao__rodape">
+        Os preços do catálogo são referência. Nenhum reparo começa sem a sua autorização.
+        <a asp-controller="Services" asp-action="Index">Abrir o catálogo completo</a>.
+    </p>
+</section>
+
+<section class="secao secao--como" id="como-funciona">
+    <div class="secao__lateral">
+        <span class="rotulo">Atendimento</span>
+        <h2 class="titulo-secao">Como funciona</h2>
+        <p>
+            A maior parte dos serviços fica pronta entre 24 e 96 horas.
+            Quando é preciso esperar por uma peça, o prazo é informado antes de continuar.
+        </p>
+        <a class="botao botao--linha botao--pequeno" asp-controller="ServiceRequest" asp-action="Create">Abrir solicitação</a>
+    </div>
+
+    <ol class="passos">
+        <li>
+            <strong>Você descreve o problema</strong>
+            <span>Preencha o formulário ou mande uma mensagem no WhatsApp. Se puder, envie uma foto da tela ou do equipamento.</span>
+        </li>
+        <li>
+            <strong>Diagnóstico e orçamento</strong>
+            <span>Avaliamos o equipamento e enviamos o valor. Nada é feito sem a sua autorização.</span>
+        </li>
+        <li>
+            <strong>Reparo e teste</strong>
+            <span>Executamos o serviço e testamos o equipamento. Se houver peça envolvida, avisamos o prazo.</span>
+        </li>
+        <li>
+            <strong>Retirada e garantia</strong>
+            <span>Você retira na bancada ou combinamos a entrega. O serviço tem 90 dias de garantia.</span>
+        </li>
+    </ol>
+</section>
+
+<section class="secao" id="atendimento">
+    <div class="secao__cabecalho">
+        <div>
+            <span class="rotulo">Onde e quando</span>
+            <h2 class="titulo-secao">Atendimento em Anápolis</h2>
+        </div>
+        <p>
+            O atendimento é feito na bancada e também com busca do equipamento na cidade.
+            Confirme o endereço e o horário antes de sair de casa.
+        </p>
+    </div>
+
+    <div class="dados-atendimento">
+        <div>
+            <h3><svg aria-hidden="true"><use href="#icone-mapa"></use></svg> Onde fica</h3>
+            <p>
+                Anápolis, Goiás.
+                @* TODO: preencher com o endereço real da bancada. *@
+                Endereço informado pelo WhatsApp.
+            </p>
+        </div>
+        <div>
+            <h3><svg aria-hidden="true"><use href="#icone-relogio"></use></svg> Horário</h3>
+            <p>
+                @* TODO: preencher com os dias e horários reais de atendimento. *@
+                Atendimento com hora marcada. Confirme a disponibilidade pelo WhatsApp.
+            </p>
+        </div>
+        <div>
+            <h3>Busca e entrega</h3>
+            <p>
+                Buscamos e devolvemos o equipamento em Anápolis.
+                Marque a opção no formulário ou combine no WhatsApp.
+            </p>
+        </div>
+        <div>
+            <h3>Pagamento</h3>
+            <p>
+                @* TODO: listar as formas de pagamento aceitas (Pix, dinheiro, cartão, parcelamento). *@
+                As formas de pagamento são informadas junto com o orçamento.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="secao secao--duvidas" id="duvidas">
+    <div class="secao__lateral">
+        <span class="rotulo">Dúvidas</span>
+        <h2 class="titulo-secao">Perguntas que chegam antes do serviço</h2>
+        <p>
+            Se a sua dúvida não estiver aqui, chame no WhatsApp. Respondemos no horário de atendimento.
+        </p>
+        <a class="botao botao--linha botao--pequeno" asp-controller="Home" asp-action="Forum">Ver todas as dúvidas</a>
+    </div>
+
+    <div class="perguntas">
+        <details>
+            <summary>Quanto custa o conserto?</summary>
+            <p>O valor depende do diagnóstico. Você recebe um orçamento antes de qualquer serviço começar e só autoriza se concordar.</p>
+        </details>
+        <details>
+            <summary>Quanto tempo leva?</summary>
+            <p>A maioria dos serviços fica pronta entre 24 e 96 horas. Quando é necessário aguardar peças, o prazo é avisado pelo contato informado na solicitação.</p>
+        </details>
+        <details>
+            <summary>O serviço tem garantia?</summary>
+            <p>Sim. Os serviços têm 90 dias de garantia para o problema identificado no atendimento.</p>
+        </details>
+        <details>
+            <summary>Preciso criar conta para pedir orçamento?</summary>
+            <p>Não. O formulário de solicitação é aberto a qualquer visitante. A conta serve para acompanhar pedidos e preencher os dados mais rápido.</p>
+        </details>
+    </div>
+</section>
+
+<section class="chamada">
+    <div>
+        <span class="rotulo">Orçamento</span>
+        <h2>Descreva o problema e receba o valor.</h2>
+        <p>
+            Se preferir, mande uma mensagem no WhatsApp com o modelo do equipamento e o que está acontecendo.
+            Quanto mais detalhes, mais rápido fica o diagnóstico.
+        </p>
+    </div>
+    <div class="chamada__acoes">
+        <a class="botao botao--whats" href="@zap" target="_blank" rel="noopener noreferrer">
+            <svg aria-hidden="true"><use href="#icone-whatsapp"></use></svg>
+            Chamar no WhatsApp
+        </a>
+        <a class="botao botao--linha" asp-controller="ServiceRequest" asp-action="Create">Abrir solicitação</a>
+        <a class="chamada__telefone" href="tel:+5562998877833">(62) 99887-7833</a>
+    </div>
+</section>
