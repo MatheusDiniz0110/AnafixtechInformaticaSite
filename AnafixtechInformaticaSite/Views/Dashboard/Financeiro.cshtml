@@ -20,7 +20,7 @@
 </div>
 
 @* Filtros: período, tipo e sócio (método GET: ficam no endereço). *@
-<form method="get" asp-controller="Dashboard" asp-action="Financeiro" class="db-form" style="margin-bottom:1rem">
+<form method="get" asp-controller="Dashboard" asp-action="Financeiro" class="db-form db-mb">
     <div class="db-field"><label>De</label><input type="date" name="de" value="@deIso" class="db-input" /></div>
     <div class="db-field"><label>Até</label><input type="date" name="ate" value="@ateIso" class="db-input" /></div>
     <div class="db-field">
@@ -84,7 +84,7 @@
         else
         {
             <div class="db-table-wrap">
-                <table class="db-table" style="min-width:0">
+                <table class="db-table db-table--compact">
                     <thead><tr><th>Sócio</th><th class="db-num">Entradas</th><th class="db-num">Saídas</th></tr></thead>
                     <tbody>
                         @foreach (var s in Model.PorSocio)

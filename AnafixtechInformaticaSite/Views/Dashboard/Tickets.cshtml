@@ -18,7 +18,7 @@
 </div>
 
 @* Formulário expansível de novo ticket (envia para TicketNovo). *@
-<div class="db-card" style="margin-bottom:1rem">
+<div class="db-card db-mb">
     <details>
         <summary>+ Abrir ticket</summary>
         <form asp-controller="Dashboard" asp-action="TicketNovo" method="post" class="db-form">
@@ -60,7 +60,7 @@
                         @* Histórico de contatos, escondido até o clique. *@
                         @if (!string.IsNullOrWhiteSpace(t.CommunicationLog))
                         {
-                            <details><summary>Histórico de contato</summary><div class="db-muted" style="white-space:pre-wrap">@t.CommunicationLog</div></details>
+                            <details><summary>Histórico de contato</summary><div class="db-muted db-pre">@t.CommunicationLog</div></details>
                         }
                     </td>
                     <td><span class="db-badge db-badge--@t.Priority.ToBadge()">@t.Priority.ToLabel()</span></td>

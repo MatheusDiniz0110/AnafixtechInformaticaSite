@@ -68,7 +68,7 @@
     width: 44px;
     height: 44px;
     font-size: 1.2rem;
-    border-radius: 12px;
+    border-radius: 6px;
     background: var(--d-card);
     border: 1px solid var(--d-border);
 }
@@ -113,7 +113,7 @@
     color: var(--d-muted) !important;
     background: var(--d-card);
     border: 1px solid var(--d-border);
-    border-radius: 999px;
+    border-radius: 4px;
 }
 
     .db-tab:hover {
@@ -132,7 +132,7 @@
 .db-alert {
     margin-bottom: 1rem;
     padding: .8rem 1rem;
-    border-radius: 12px;
+    border-radius: 6px;
     border: 1px solid;
     font-size: .95rem;
 }
@@ -168,7 +168,7 @@
     padding: 1.2rem 1.3rem;
     background: var(--d-card);
     border: 1px solid var(--d-border);
-    border-radius: 16px;
+    border-radius: 6px;
 }
 
     .db-card > h2 {
@@ -194,7 +194,7 @@
     padding: 1.1rem 1.2rem;
     background: var(--d-card);
     border: 1px solid var(--d-border);
-    border-radius: 16px;
+    border-radius: 6px;
     color: var(--d-text) !important;
 }
 
@@ -238,7 +238,7 @@ a.db-kpi:hover {
     padding: .15rem .6rem;
     font-size: .72rem;
     font-weight: 700;
-    border-radius: 999px;
+    border-radius: 4px;
     white-space: nowrap;
 }
 
@@ -281,7 +281,7 @@ a.db-kpi:hover {
 .db-table-wrap {
     overflow-x: auto;
     border: 1px solid var(--d-border);
-    border-radius: 14px;
+    border-radius: 6px;
     background: var(--d-card);
 }
 
@@ -358,7 +358,7 @@ a.db-kpi:hover {
     color: var(--d-text);
     background: var(--d-input);
     border: 1px solid var(--d-border);
-    border-radius: 10px;
+    border-radius: 6px;
 }
 
 .db-textarea {
@@ -402,7 +402,7 @@ a.db-kpi:hover {
     color: #fff !important;
     background: #1e293b;
     border: 1px solid transparent;
-    border-radius: 10px;
+    border-radius: 6px;
     text-decoration: none;
 }
 
@@ -449,7 +449,7 @@ a.db-kpi:hover {
     color: var(--d-muted) !important;
     background: var(--d-card);
     border: 1px solid var(--d-border);
-    border-radius: 999px;
+    border-radius: 4px;
 }
 
     .db-chip:hover {
@@ -556,6 +556,114 @@ a.db-kpi:hover {
         margin: 0;
         word-break: break-word;
     }
+
+/* ---------- Ícones SVG ---------- */
+.db-sprite {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+.db-icone {
+    width: 1em;
+    height: 1em;
+    flex: 0 0 auto;
+    vertical-align: -0.14em;
+}
+
+.db-tab .db-icone {
+    width: 1.05em;
+    height: 1.05em;
+    margin-right: .35rem;
+}
+
+.db-bell .db-icone {
+    width: 20px;
+    height: 20px;
+}
+
+.db-muted .db-icone {
+    margin-right: .3rem;
+    color: var(--d-faint);
+}
+
+.db-list a .db-icone {
+    margin-right: .4rem;
+    color: var(--d-muted);
+}
+
+/* Ponto de "não lida" nas notificações. */
+.db-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: .35rem;
+    vertical-align: middle;
+    background: var(--d-accent);
+    border-radius: 50%;
+}
+
+/* ---------- Utilitários (substituem estilos inline das views) ---------- */
+.db-mb {
+    margin-bottom: 1rem;
+}
+
+.db-mb-lg {
+    margin-bottom: 2rem;
+}
+
+.db-mt {
+    margin-top: 1rem;
+}
+
+.db-mt-sm {
+    margin-top: .5rem;
+}
+
+.db-mt-xs {
+    margin-top: .6rem;
+}
+
+.db-pre {
+    white-space: pre-wrap;
+}
+
+.db-foto {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--d-border);
+    border-radius: 6px;
+}
+
+.db-select--status {
+    width: 130px;
+}
+
+.db-select--forma {
+    width: 140px;
+}
+
+.db-input--qtd {
+    width: 80px;
+}
+
+.db-input--valor {
+    width: 100px;
+}
+
+.db-table--compact {
+    min-width: 0;
+}
+
+.db-kpi-value--sm {
+    font-size: 1.1rem;
+}
+
+.db-inline--between {
+    justify-content: space-between;
+}
 
 /* ---------- Responsivo ---------- */
 @media (max-width: 640px) {

@@ -155,7 +155,7 @@
         </div>
         @if (!Model.EstoqueBaixo.Any())
         {
-            <div class="db-empty">Tudo em dia. 🎉</div>
+            <div class="db-empty">Tudo em dia.</div>
         }
         else
         {
@@ -214,7 +214,11 @@
                 {
                     <li>
                         <a asp-controller="Dashboard" asp-action="NotificacaoAbrir" asp-route-id="@notificacao.Id">
-                            @(notificacao.IsRead ? "" : "🔵 ")@notificacao.Title
+                            @if (!notificacao.IsRead)
+                            {
+                                <span class="db-dot" title="Não lida" aria-label="Não lida"></span>
+                            }
+                            @notificacao.Title
                         </a>
                         <span class="db-muted">@Fmt.Stamp(notificacao.CreatedAt)</span>
                     </li>

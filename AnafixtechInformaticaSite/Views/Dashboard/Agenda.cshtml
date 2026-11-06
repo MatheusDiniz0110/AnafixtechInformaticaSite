@@ -10,7 +10,7 @@
 <div class="db-card-head"><h2>Agendamentos</h2></div>
 
 @* Formulário expansível de novo agendamento (envia para AgendamentoNovo). Os "name" seguem o AgendamentoFormViewModel. *@
-<div class="db-card" style="margin-bottom:1rem">
+<div class="db-card db-mb">
     <details>
         <summary>+ Novo agendamento</summary>
         <form asp-controller="Dashboard" asp-action="AgendamentoNovo" method="post" class="db-form">
@@ -45,7 +45,7 @@
 </div>
 
 @* Tabela de compromissos. *@
-<div class="db-table-wrap" style="margin-bottom:2rem">
+<div class="db-table-wrap db-mb-lg">
     <table class="db-table">
         <thead><tr><th>Quando</th><th>Tipo</th><th>Descrição</th><th>Cliente</th><th>Técnico</th><th>Status</th><th>Alterar</th></tr></thead>
         <tbody>
@@ -62,7 +62,7 @@
                         }
                         @if (!string.IsNullOrWhiteSpace(a.Endereco))
                         {
-                            <div class="db-muted">📍 @a.Endereco</div>
+                            <div class="db-muted"><svg class="db-icone" aria-hidden="true"><use href="#icone-mapa"></use></svg> @a.Endereco</div>
                         }
                     </td>
                     <td>@a.ClientName<div class="db-muted">@a.ClientPhone</div></td>
@@ -72,7 +72,7 @@
                         @* Troca o status do compromisso (envia para AgendamentoAlterarStatus). *@
                         <form asp-controller="Dashboard" asp-action="AgendamentoAlterarStatus" method="post" class="db-inline">
                             <input type="hidden" name="id" value="@a.Id" />
-                            <select name="status" class="db-select" style="width:130px">
+                            <select name="status" class="db-select db-select--status">
                                 @foreach (var s in Enum.GetValues<AgendamentoStatus>())
                                 {
                                     <option value="@s" selected="@(a.Status == s)">@s.ToLabel()</option>
@@ -95,7 +95,7 @@
 <div class="db-card-head"><h2>Horários disponíveis</h2></div>
 
 @* Formulário expansível de novo horário (envia para HorarioNovo). *@
-<div class="db-card" style="margin-bottom:1rem">
+<div class="db-card db-mb">
     <details>
         <summary>+ Abrir horário</summary>
         <form asp-controller="Dashboard" asp-action="HorarioNovo" method="post" class="db-form">

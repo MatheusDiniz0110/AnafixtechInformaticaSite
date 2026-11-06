@@ -19,14 +19,14 @@
 </div>
 
 @* Busca por nome da peça ou fornecedor. *@
-<form method="get" asp-controller="Dashboard" asp-action="Estoque" class="db-form" style="margin-bottom:1rem">
+<form method="get" asp-controller="Dashboard" asp-action="Estoque" class="db-form db-mb">
     <input type="hidden" name="somenteBaixo" value="@(Model.SomenteBaixo ? "true" : "false")" />
     <div class="db-field db-field--full"><input class="db-input" name="busca" value="@Model.Busca" placeholder="Buscar por peça ou fornecedor" /></div>
     <div class="db-field"><button type="submit" class="db-btn">Buscar</button></div>
 </form>
 
 @* Cartão expansível com o formulário de nova peça (envia para EstoqueNovo). *@
-<div class="db-card" style="margin-bottom:1rem">
+<div class="db-card db-mb">
     <details>
         <summary>+ Cadastrar nova peça</summary>
         <form asp-controller="Dashboard" asp-action="EstoqueNovo" method="post" class="db-form">
@@ -77,9 +77,9 @@
                                 @* Registrar compra: soma ao estoque e lança a saída no financeiro. *@
                                 <form asp-controller="Dashboard" asp-action="EstoqueComprar" method="post" class="db-inline">
                                     <input type="hidden" name="id" value="@item.Id" />
-                                    <input type="number" min="1" name="quantidade" value="1" class="db-input" style="width:80px" title="Quantidade comprada" />
-                                    <input name="valorUnitario" class="db-input" style="width:100px" inputmode="decimal" placeholder="Valor un." title="Valor unitário" required />
-                                    <select name="forma" class="db-select" style="width:140px">
+                                    <input type="number" min="1" name="quantidade" value="1" class="db-input db-input--qtd" title="Quantidade comprada" />
+                                    <input name="valorUnitario" class="db-input db-input--valor" inputmode="decimal" placeholder="Valor un." title="Valor unitário" required />
+                                    <select name="forma" class="db-select db-select--forma">
                                         @foreach (var f in Enum.GetValues<PaymentMethod>())
                                         {
                                             <option value="@f">@f.ToLabel()</option>
@@ -91,7 +91,7 @@
                                 @* Ajustar: soma (+) ou subtrai (−) sem mexer no financeiro. *@
                                 <form asp-controller="Dashboard" asp-action="EstoqueAjustar" method="post" class="db-inline">
                                     <input type="hidden" name="id" value="@item.Id" />
-                                    <input type="number" name="delta" value="-1" class="db-input" style="width:80px" title="Use número negativo para dar baixa" />
+                                    <input type="number" name="delta" value="-1" class="db-input db-input--qtd" title="Use número negativo para dar baixa" />
                                     <button type="submit" class="db-btn db-btn--sm">Ajustar quantidade</button>
                                 </form>
 

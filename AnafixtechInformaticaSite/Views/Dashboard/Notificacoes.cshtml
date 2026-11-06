@@ -5,15 +5,15 @@
     ViewData["Title"] = "Notificações";
     ViewData["Tab"] = "Notificacoes";
 
-    // Função local: devolve o ícone de cada tipo de notificação.
+    // Função local: devolve o símbolo SVG de cada tipo de notificação.
     string Icone(NotificationType t) => t switch
     {
-        NotificationType.OsNew => "🧾",
-        NotificationType.Payment => "💰",
-        NotificationType.Stock => "📦",
-        NotificationType.Ticket => "🎫",
-        NotificationType.Urgent => "🚨",
-        _ => "ℹ️"
+        NotificationType.OsNew => "icone-os",
+        NotificationType.Payment => "icone-financeiro",
+        NotificationType.Stock => "icone-estoque",
+        NotificationType.Ticket => "icone-ticket",
+        NotificationType.Urgent => "icone-alerta",
+        _ => "icone-info"
     };
 }
 
@@ -38,8 +38,12 @@
                 <li>
                     @* Clicar abre a notificação: marca como lida e leva ao item (OS, ticket ou estoque). *@
                     <a asp-controller="Dashboard" asp-action="NotificacaoAbrir" asp-route-id="@n.Id">
-                        <span aria-hidden="true">@Icone(n.Type)</span>
-                        @(n.IsRead ? "" : "🔵 ")<strong>@n.Title</strong>
+                        <svg class="db-icone" aria-hidden="true"><use href="#@Icone(n.Type)"></use></svg>
+                        @if (!n.IsRead)
+                        {
+                            <span class="db-dot" title="Não lida" aria-label="Não lida"></span>
+                        }
+                        <strong>@n.Title</strong>
                         <div class="db-muted">@n.Message</div>
                     </a>
                     <span class="db-muted">@Fmt.Stamp(n.CreatedAt)</span>

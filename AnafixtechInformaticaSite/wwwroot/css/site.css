@@ -643,6 +643,14 @@ footer a {
     }
 }
 
+/* Esconde o conjunto de símbolos SVG sem usar style inline. */
+.svg-sprite {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
 @media (prefers-reduced-motion: reduce) {
     html {
         scroll-behavior: auto;

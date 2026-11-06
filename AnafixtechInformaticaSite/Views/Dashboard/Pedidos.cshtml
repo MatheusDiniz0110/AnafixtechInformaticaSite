@@ -30,7 +30,7 @@
 </div>
 
 @* Busca por texto (método GET: o termo vai no endereço). Mantém o filtro de status escolhido. *@
-<form method="get" asp-controller="Dashboard" asp-action="Pedidos" class="db-form" style="margin-bottom:1rem">
+<form method="get" asp-controller="Dashboard" asp-action="Pedidos" class="db-form db-mb">
     @* Campo oculto: repete o status atual para a busca não perdê-lo. *@
     <input type="hidden" name="status" value="@Model.Status" />
     <div class="db-field db-field--full">

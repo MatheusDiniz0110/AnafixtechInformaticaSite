@@ -30,7 +30,7 @@
 </div>
 
 @* ===== Busca por texto (GET: o termo vai no endereço) ===== *@
-<form method="get" asp-controller="Dashboard" asp-action="Solicitacoes" class="db-form" style="margin-bottom:1rem">
+<form method="get" asp-controller="Dashboard" asp-action="Solicitacoes" class="db-form db-mb">
     @* Mantém o filtro de situação escolhido ao buscar. *@
     <input type="hidden" name="status" value="@Model.Status" />
     <div class="db-field db-field--full">

@@ -59,7 +59,7 @@
         <dl class="db-dl">
             <dt>Equipamento</dt><dd>@p.ProductName</dd>
             <dt>Serviço</dt><dd>@(p.Service?.Title ?? "—")</dd>
-            <dt>Problema</dt><dd style="white-space:pre-wrap">@p.ProblemDescription</dd>
+            <dt>Problema</dt><dd class="db-pre">@p.ProblemDescription</dd>
         </dl>
     </div>
 </div>
@@ -139,7 +139,7 @@
 </div>
 
 @* ===== Linha 3: pagamento ===== *@
-<div class="db-card" style="margin-bottom:1rem">
+<div class="db-card db-mb">
     <div class="db-card-head">
         <h2>Pagamento <span class="db-badge db-badge--@p.PaymentStatus.ToBadge()">@p.PaymentStatus.ToLabel()</span></h2>
     </div>
@@ -149,7 +149,7 @@
         <div class="db-kpi"><div class="db-kpi-label">Valor da OS</div><div class="db-kpi-value">@(devido.HasValue ? Fmt.Money(devido) : (p.PriceNote ?? "A combinar"))</div></div>
         <div class="db-kpi"><div class="db-kpi-label">Recebido</div><div class="db-kpi-value db-pos">@Fmt.Money(p.ValorRecebido)</div></div>
         <div class="db-kpi"><div class="db-kpi-label">Restante</div><div class="db-kpi-value">@Fmt.Money(restante)</div></div>
-        <div class="db-kpi"><div class="db-kpi-label">Último pagamento</div><div class="db-kpi-value" style="font-size:1.1rem">@Fmt.Date(p.PaymentDate)</div><div class="db-kpi-hint">@(p.PaymentMethod.HasValue ? p.PaymentMethod.Value.ToLabel() : "—")</div></div>
+        <div class="db-kpi"><div class="db-kpi-label">Último pagamento</div><div class="db-kpi-value db-kpi-value--sm">@Fmt.Date(p.PaymentDate)</div><div class="db-kpi-hint">@(p.PaymentMethod.HasValue ? p.PaymentMethod.Value.ToLabel() : "—")</div></div>
     </div>
 
     @* Formulário de novo pagamento: atualiza a OS e cria o lançamento financeiro juntos. *@
@@ -180,7 +180,7 @@
             </div>
             <div class="db-field"><button type="submit" class="db-btn db-btn--primary">Registrar pagamento</button></div>
         </form>
-        <div class="db-muted" style="margin-top:.6rem">O pagamento atualiza a OS e cria o lançamento no financeiro ao mesmo tempo.</div>
+        <div class="db-muted db-mt-xs">O pagamento atualiza a OS e cria o lançamento no financeiro ao mesmo tempo.</div>
     }
 </div>
 
