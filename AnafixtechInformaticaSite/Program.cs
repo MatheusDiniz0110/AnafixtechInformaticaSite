@@ -48,6 +48,13 @@ builder.Services.Configure<FormOptions>(options =>
 // ---------------------------------------------------------------------------------------------
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
+// Algumas plataformas expõem a URL do PostgreSQL em DATABASE_URL em vez de
+// ConnectionStrings__DefaultConnection. Aceitamos as duas para não depender do nome exato.
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    connectionString = builder.Configuration["DATABASE_URL"];
+}
+
 if (string.IsNullOrWhiteSpace(connectionString))
 {
     throw new InvalidOperationException(
@@ -57,7 +64,22 @@ if (string.IsNullOrWhiteSpace(connectionString))
 
 // O Render entrega a conexão no formato postgres://usuario:senha@host/banco?sslmode=require.
 // O Npgsql só entende o formato chave=valor, então convertemos quando necessário.
-connectionString = NormalizarConnectionString(connectionString);
+connectionString = ConnectionStringHelper.Normalizar(connectionString);
+
+// Fora do desenvolvimento o banco NÃO está na mesma máquina: o contêiner do Render não tem
+// PostgreSQL em localhost. Se a conexão apontar para lá, é sinal de que a variável de ambiente
+// não chegou ao serviço. Falhar aqui deixa o erro claro no log do deploy, em vez de o site
+// subir e devolver 500 em todas as páginas.
+var bancoConfigurado = new NpgsqlConnectionStringBuilder(connectionString);
+
+if (!builder.Environment.IsDevelopment() &&
+    (bancoConfigurado.Host is "localhost" or "127.0.0.1" or "::1"))
+{
+    throw new InvalidOperationException(
+        "A conexão do banco aponta para localhost, mas em produção o PostgreSQL é externo. " +
+        "No Render, defina a variável ConnectionStrings__DefaultConnection com a Internal Database URL " +
+        "do banco (aba Environment do Web Service) e faça um novo deploy.");
+}
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
@@ -126,6 +148,12 @@ builder.Services.AddAuthorization(options =>
 });
 
 var app = builder.Build();
+
+// Mostra no log para onde o site está tentando conectar (sem senha). Ajuda a diagnosticar
+// variável de ambiente ausente ou apontando para o banco errado.
+app.Logger.LogInformation(
+    "PostgreSQL: {Host}:{Port}/{Database} (SSL: {SslMode})",
+    bancoConfigurado.Host, bancoConfigurado.Port, bancoConfigurado.Database, bancoConfigurado.SslMode);
 
 // ---------------------------------------------------------------------------------------------
 // 4.1) Migrações automáticas (opcional)
@@ -207,43 +235,3 @@ app.MapControllerRoute(
 
 app.Run();
 
-// ---------------------------------------------------------------------------------------------
-// Converte a URL do PostgreSQL (postgres://...) para o formato chave=valor do Npgsql.
-// Strings que já estão no formato chave=valor passam sem alteração.
-// ---------------------------------------------------------------------------------------------
-static string NormalizarConnectionString(string valor)
-{
-    if (!valor.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) &&
-        !valor.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
-    {
-        return valor;
-    }
-
-    var uri = new Uri(valor);
-    var credenciais = uri.UserInfo.Split(':', 2);
-
-    var cs = new NpgsqlConnectionStringBuilder
-    {
-        Host = uri.Host,
-        Port = uri.IsDefaultPort ? 5432 : uri.Port,
-        Database = Uri.UnescapeDataString(uri.AbsolutePath.TrimStart('/')),
-        Username = Uri.UnescapeDataString(credenciais[0]),
-        Password = credenciais.Length > 1 ? Uri.UnescapeDataString(credenciais[1]) : null
-    };
-
-    // Parâmetros da query (sslmode=require, por exemplo).
-    foreach (var par in uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
-    {
-        var partes = par.Split('=', 2);
-        var nome = Uri.UnescapeDataString(partes[0]);
-        var conteudo = partes.Length > 1 ? Uri.UnescapeDataString(partes[1]) : string.Empty;
-
-        if (nome.Equals("sslmode", StringComparison.OrdinalIgnoreCase) &&
-            Enum.TryParse<SslMode>(conteudo, true, out var modoSsl))
-        {
-            cs.SslMode = modoSsl;
-        }
-    }
-
-    return cs.ConnectionString;
-}

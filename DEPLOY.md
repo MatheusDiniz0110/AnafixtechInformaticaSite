@@ -11,6 +11,10 @@ Pré-requisitos: .NET 10 SDK e Docker.
 # Sobe o PostgreSQL local (porta 5432)
 docker compose up -d db
 
+# Configura os segredos locais (uma vez só, ficam fora do repositório)
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=anafixtech;Username=anafixtech;Password=anafixtech_dev;" --project AnafixtechInformaticaSite
+dotnet user-secrets set "Jwt:SecretKey" "<chave aleatória de 32+ caracteres>" --project AnafixtechInformaticaSite
+
 # Cria/atualiza o schema
 dotnet ef database update --project AnafixtechInformaticaSite
 
@@ -22,9 +26,10 @@ docker exec anafixtech-db psql -U anafixtech -d anafixtech -f /tmp/seed.sql
 dotnet run --project AnafixtechInformaticaSite --launch-profile https
 ```
 
-A string de conexão local está em `AnafixtechInformaticaSite/appsettings.json` e usa
+A connection string local **não fica no repositório**: vem dos user secrets e usa
 usuário/senha só de desenvolvimento (`anafixtech` / `anafixtech_dev`), criados pelo
-`docker-compose.yml`.
+`docker-compose.yml`. O `dotnet ef` também lê os user secrets, então os comandos acima
+funcionam sem variável de ambiente extra.
 
 ### Criar o primeiro administrador
 
@@ -46,6 +51,21 @@ docker exec anafixtech-db psql -U anafixtech -d anafixtech -c "UPDATE \"Users\" 
 
 O Render injeta a connection string no serviço e gera a `Jwt__SecretKey`. As migrations
 são aplicadas automaticamente no startup (`Database__MigrateOnStartup=true`).
+
+Depois do primeiro deploy, abra **Web Service > Environment** e confirme que existem as
+quatro variáveis abaixo. Se o serviço foi criado na mão (fora do Blueprint), elas não
+aparecem sozinhas:
+
+| Variável | Valor |
+|---|---|
+| `ASPNETCORE_ENVIRONMENT` | `Production` |
+| `ConnectionStrings__DefaultConnection` | Internal Database URL do `anafixtech-db` |
+| `Database__MigrateOnStartup` | `true` |
+| `Jwt__SecretKey` | 32+ caracteres aleatórios (não troque depois) |
+
+Ao alterar qualquer variável, use **Save and deploy** (não apenas "Save only"), senão a
+instância que está rodando continua com o ambiente antigo. A aplicação também aceita a
+variável `DATABASE_URL` como alternativa à `ConnectionStrings__DefaultConnection`.
 
 O Render entrega a conexão como `postgres://usuario:senha@host/banco`. O `Program.cs`
 converte esse formato para o formato chave=valor que o Npgsql entende, então **não é
@@ -115,3 +135,30 @@ git push
 
 O Render rebuilda e reimplanta automaticamente (autoDeploy). Se houver migration nova, ela é
 aplicada no startup.
+
+## 5. Problemas comuns no Render
+
+### O site devolve erro 500 e o log mostra `Failed to connect to 127.0.0.1:5432`
+
+A aplicação está lendo a conexão local em vez da conexão do Render, ou seja, a variável
+`ConnectionStrings__DefaultConnection` não chegou ao serviço. No log aparece algo como:
+
+```
+An error occurred using the connection to database 'anafixtech' on server 'tcp://localhost:5432'.
+```
+
+Corrija em **Web Service > Environment**:
+
+1. Adicione `ConnectionStrings__DefaultConnection` com a **Internal Database URL** do
+   `anafixtech-db` (aba **Connect** do banco). Não use a External URL aqui.
+2. Confira as outras três variáveis da tabela da seção 2.
+3. Clique em **Save and deploy** e aguarde o novo deploy.
+4. No log, procure a linha `PostgreSQL: <host>:5432/<banco> (...)`. O host deve ser interno
+   do Render (`dpg-...`), nunca `localhost`.
+
+Se a variável existir mas o log continuar igual, o deploy não foi refeito ou o serviço em
+produção é outro (por exemplo, um serviço criado na mão em vez do Blueprint). Nesse caso,
+confira o nome do serviço no topo do log e ajuste as variáveis nele.
+
+A aplicação agora falha na inicialização com uma mensagem explícita quando a conexão aponta
+para `localhost` em produção, em vez de subir e devolver 500 em todas as páginas.
