@@ -9,10 +9,24 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Npgsql;
 using System.Net;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ---------------------------------------------------------------------------------------------
+// 0) Porta do serviço
+// Em produção (Render, por exemplo), a plataforma informa a porta na variável PORT e espera
+// que a aplicação escute em 0.0.0.0. Em desenvolvimento nada muda: o launchSettings continua
+// mandando nas portas 5290/7186.
+// ---------------------------------------------------------------------------------------------
+var portaPublica = Environment.GetEnvironmentVariable("PORT");
+if (int.TryParse(portaPublica, out var porta))
+{
+    // Endpoint explícito: ignora a porta padrão 8080 que a imagem do .NET define.
+    builder.WebHost.ConfigureKestrel(options => options.ListenAnyIP(porta));
+}
 
 // ---------------------------------------------------------------------------------------------
 // 1) MVC (controllers + views)
@@ -41,8 +55,12 @@ if (string.IsNullOrWhiteSpace(connectionString))
         "via user secrets (desenvolvimento) ou variável de ambiente ConnectionStrings__DefaultConnection (produção).");
 }
 
+// O Render entrega a conexão no formato postgres://usuario:senha@host/banco?sslmode=require.
+// O Npgsql só entende o formato chave=valor, então convertemos quando necessário.
+connectionString = NormalizarConnectionString(connectionString);
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseNpgsql(connectionString));
 
 // ---------------------------------------------------------------------------------------------
 // 3) Autenticação JWT
@@ -110,6 +128,20 @@ builder.Services.AddAuthorization(options =>
 var app = builder.Build();
 
 // ---------------------------------------------------------------------------------------------
+// 4.1) Migrações automáticas (opcional)
+// Em produção, a imagem final não tem o SDK nem o dotnet-ef, então não dá para rodar
+// "dotnet ef database update" dentro do contêiner. Com Database__MigrateOnStartup=true, a
+// aplicação aplica as migrations pendentes ao iniciar. Em desenvolvimento fica desligado:
+// use "dotnet ef database update".
+// ---------------------------------------------------------------------------------------------
+if (builder.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
+{
+    using var escopo = app.Services.CreateScope();
+    var banco = escopo.ServiceProvider.GetRequiredService<AppDbContext>();
+    banco.Database.Migrate();
+}
+
+// ---------------------------------------------------------------------------------------------
 // 5) Cabeçalhos de segurança em TODAS as respostas
 //    - X-Content-Type-Options: impede o navegador de "adivinhar" o tipo de um arquivo.
 //    - X-Frame-Options: impede que o site seja colocado dentro de um iframe (clickjacking).
@@ -127,11 +159,14 @@ app.Use(async (context, next) =>
 });
 
 // ---------------------------------------------------------------------------------------------
-// 6) Atrás do Cloudflare Tunnel (servidor de casa)
-// O cloudflared entrega a requisição em http://localhost, mas avisa no cabeçalho
-// X-Forwarded-Proto que o visitante veio por HTTPS. Sem isso, o ASP.NET acharia que o
-// acesso é inseguro e poderia entrar em loop de redirecionamento.
-// Só confiamos nesse cabeçalho quando ele vem da própria máquina (loopback).
+// 6) Atrás de proxy reverso (Cloudflare Tunnel em casa, Render em produção)
+// O proxy entrega a requisição em http, mas avisa no cabeçalho X-Forwarded-Proto que o
+// visitante veio por HTTPS. Sem isso, o ASP.NET acharia que o acesso é inseguro e entraria
+// em loop de redirecionamento.
+//
+// - Desenvolvimento: confiamos só no loopback (cloudflared roda na mesma máquina).
+// - Produção: o contêiner só recebe tráfego pelo proxy da plataforma, então aceitamos os
+//   cabeçalhos de qualquer proxy. Listas vazias = sem restrição de origem.
 // ---------------------------------------------------------------------------------------------
 var forwardedOptions = new ForwardedHeadersOptions
 {
@@ -139,8 +174,13 @@ var forwardedOptions = new ForwardedHeadersOptions
 };
 forwardedOptions.KnownProxies.Clear();
 forwardedOptions.KnownNetworks.Clear();
-forwardedOptions.KnownProxies.Add(IPAddress.Loopback);   // 127.0.0.1
-forwardedOptions.KnownProxies.Add(IPAddress.IPv6Loopback); // ::1
+
+if (app.Environment.IsDevelopment())
+{
+    forwardedOptions.KnownProxies.Add(IPAddress.Loopback);     // 127.0.0.1
+    forwardedOptions.KnownProxies.Add(IPAddress.IPv6Loopback); // ::1
+}
+
 app.UseForwardedHeaders(forwardedOptions);
 
 // ---------------------------------------------------------------------------------------------
@@ -166,3 +206,44 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 app.Run();
+
+// ---------------------------------------------------------------------------------------------
+// Converte a URL do PostgreSQL (postgres://...) para o formato chave=valor do Npgsql.
+// Strings que já estão no formato chave=valor passam sem alteração.
+// ---------------------------------------------------------------------------------------------
+static string NormalizarConnectionString(string valor)
+{
+    if (!valor.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) &&
+        !valor.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+    {
+        return valor;
+    }
+
+    var uri = new Uri(valor);
+    var credenciais = uri.UserInfo.Split(':', 2);
+
+    var cs = new NpgsqlConnectionStringBuilder
+    {
+        Host = uri.Host,
+        Port = uri.IsDefaultPort ? 5432 : uri.Port,
+        Database = Uri.UnescapeDataString(uri.AbsolutePath.TrimStart('/')),
+        Username = Uri.UnescapeDataString(credenciais[0]),
+        Password = credenciais.Length > 1 ? Uri.UnescapeDataString(credenciais[1]) : null
+    };
+
+    // Parâmetros da query (sslmode=require, por exemplo).
+    foreach (var par in uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
+    {
+        var partes = par.Split('=', 2);
+        var nome = Uri.UnescapeDataString(partes[0]);
+        var conteudo = partes.Length > 1 ? Uri.UnescapeDataString(partes[1]) : string.Empty;
+
+        if (nome.Equals("sslmode", StringComparison.OrdinalIgnoreCase) &&
+            Enum.TryParse<SslMode>(conteudo, true, out var modoSsl))
+        {
+            cs.SslMode = modoSsl;
+        }
+    }
+
+    return cs.ConnectionString;
+}

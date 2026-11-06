@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;    // DbContext, DbSet e ModelConfiguration
 
 namespace AnafixtechInformaticaSite.Data
 {
-    // O "AppDbContext" é a ponte entre o C# e o SQL Server: cada DbSet abaixo vira uma tabela.
+    // O "AppDbContext" é a ponte entre o C# e o PostgreSQL: cada DbSet abaixo vira uma tabela.
     public class AppDbContext : DbContext
     {
         // Recebe as opções (string de conexão etc.) configuradas no Program.cs e repassa ao DbContext.
@@ -33,6 +33,13 @@ namespace AnafixtechInformaticaSite.Data
         {
             // Todo decimal (dinheiro) é gravado com 18 dígitos e 2 casas decimais.
             configurationBuilder.Properties<decimal>().HavePrecision(18, 2);
+
+            // Datas e horas são gravadas como "timestamp without time zone" (hora de parede).
+            // O Npgsql mapeia DateTime para "timestamp with time zone" por padrão e só aceita
+            // valores com Kind=Utc. A aplicação inteira trabalha com a hora de Brasília
+            // (Clock.Now devolve Kind=Unspecified), então o tipo sem fuso preserva o valor
+            // exato que o usuário vê, sem conversões.
+            configurationBuilder.Properties<DateTime>().HaveColumnType("timestamp without time zone");
 
             // Cada enum é gravado como TEXTO (ex.: "InProgress") em vez de número:
             // fica legível ao consultar o banco no SSMS e não quebra se a ordem do enum mudar.

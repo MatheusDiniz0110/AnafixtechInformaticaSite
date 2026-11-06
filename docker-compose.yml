@@ -1,0 +1,26 @@
+# Banco PostgreSQL para desenvolvimento local.
+# Uso:
+#   docker compose up -d db
+#   dotnet ef database update --project AnafixtechInformaticaSite
+#
+# A string de conexão correspondente está em appsettings.json.
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: anafixtech-db
+    environment:
+      POSTGRES_DB: anafixtech
+      POSTGRES_USER: anafixtech
+      POSTGRES_PASSWORD: anafixtech_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - anafixtech_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U anafixtech -d anafixtech"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  anafixtech_pgdata:

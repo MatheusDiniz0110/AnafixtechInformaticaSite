@@ -27,4 +27,11 @@ RUN dotnet publish "./AnafixtechInformaticaSite.csproj" -c $BUILD_CONFIGURATION 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+
+# A imagem roda com usuário sem privilégios (APP_UID) e o COPY acima cria os arquivos como root.
+# A pasta de uploads precisa ser gravável por esse usuário, senão o envio de foto falha com 500.
+USER root
+RUN mkdir -p /app/wwwroot/uploads/requests && chown -R $APP_UID /app/wwwroot/uploads
+USER $APP_UID
+
 ENTRYPOINT ["dotnet", "AnafixtechInformaticaSite.dll"]
