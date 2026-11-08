@@ -53,8 +53,8 @@ O Render injeta a connection string no serviço e gera a `Jwt__SecretKey`. As mi
 são aplicadas automaticamente no startup (`Database__MigrateOnStartup=true`).
 
 Depois do primeiro deploy, abra **Web Service > Environment** e confirme que existem as
-quatro variáveis abaixo. Se o serviço foi criado na mão (fora do Blueprint), elas não
-aparecem sozinhas:
+variáveis abaixo. Se o serviço foi criado na mão (fora do Blueprint), elas não aparecem
+sozinhas:
 
 | Variável | Valor |
 |---|---|
@@ -62,6 +62,8 @@ aparecem sozinhas:
 | `ConnectionStrings__DefaultConnection` | Internal Database URL do `anafixtech-db` |
 | `Database__MigrateOnStartup` | `true` |
 | `Jwt__SecretKey` | 32+ caracteres aleatórios (não troque depois) |
+| `Admin__Email` | `matheus.diniz.t@outlook.com` |
+| `Admin__Password` | senha do admin, mínimo 8 caracteres (só no painel) |
 
 Ao alterar qualquer variável, use **Save and deploy** (não apenas "Save only"), senão a
 instância que está rodando continua com o ambiente antigo. A aplicação também aceita a
@@ -71,10 +73,31 @@ O Render entrega a conexão como `postgres://usuario:senha@host/banco`. O `Progr
 converte esse formato para o formato chave=valor que o Npgsql entende, então **não é
 necessário converter a URL na mão**. A variável `PORT` também é lida automaticamente.
 
-### Preencher os dados iniciais
+### Dados iniciais e conta admin (automático)
 
-O banco novo nasce vazio. Depois do primeiro deploy, pegue a **External Database URL** em
-`anafixtech-db > Connect` e rode o seed da sua máquina:
+Com `Database__MigrateOnStartup=true`, o startup faz três coisas:
+
+1. aplica as migrations pendentes;
+2. se a tabela `Services` estiver vazia, executa o `db/seed.sql` embutido no binário —
+   entram os 26 serviços do catálogo e a linha de números da home;
+3. se `Admin__Email` e `Admin__Password` estiverem definidos, cria a conta admin (ou
+   redefine a senha, se a conta já existir).
+
+Não é preciso rodar `psql` na máquina nem ter shell no Render. O seed é idempotente
+(`ON CONFLICT DO NOTHING`): reiniciar o serviço não duplica nada.
+
+Para trocar a senha do admin depois, basta alterar `Admin__Password` no painel e fazer um
+novo deploy. Também é seguro remover a variável depois que a conta existe — ela não é
+apagada.
+
+Se preferir criar a conta pelo site: cadastre-se em `/Account/Register` usando exatamente o
+e-mail configurado em `Admin__Email`. No próximo deploy/restart a conta é promovida a
+administradora (mesmo sem `Admin__Password`).
+
+### Preencher os dados manualmente (alternativa)
+
+Se quiser aplicar o seed sem depender do startup, pegue a **External Database URL** em
+`anafixtech-db > Connect` e rode:
 
 ```powershell
 docker run --rm -v "${PWD}/db:/db" postgres:17-alpine psql "<EXTERNAL_DATABASE_URL>" -f /db/seed.sql
@@ -102,6 +125,8 @@ Variáveis de ambiente:
 | `Database__MigrateOnStartup` | `true` |
 | `ConnectionStrings__DefaultConnection` | Internal/External Database URL do Postgres |
 | `Jwt__SecretKey` | 32+ caracteres aleatórios |
+| `Admin__Email` | `matheus.diniz.t@outlook.com` |
+| `Admin__Password` | senha escolhida, mínimo 8 caracteres |
 
 Crie também um **PostgreSQL** no Render, na mesma região do Web Service, para usar a
 conexão pela rede interna.
@@ -120,6 +145,9 @@ conexão pela rede interna.
 - **Migrações em produção**: a imagem final não tem o SDK, por isso as migrations rodam via
   `Database__MigrateOnStartup=true`. Se desligar essa opção, rode
   `dotnet ef database update --connection "<EXTERNAL_DATABASE_URL>"` localmente antes do deploy.
+  O seed automático e a criação do admin também só rodam com essa opção ligada.
+- **Seed automático**: só executa quando a tabela `Services` está vazia. Depois disso, edições
+  e exclusões feitas pela dashboard são respeitadas em novos deploys.
 - **Trocar a `Jwt__SecretKey`** derruba todas as sessões ativas (os cookies antigos deixam de
   validar). É o comportamento esperado.
 - **Nunca commite** a connection string de produção nem a chave JWT. Use as variáveis do
@@ -162,3 +190,19 @@ confira o nome do serviço no topo do log e ajuste as variáveis nele.
 
 A aplicação agora falha na inicialização com uma mensagem explícita quando a conexão aponta
 para `localhost` em produção, em vez de subir e devolver 500 em todas as páginas.
+
+### O log mostra `Name or service not known` para o host `dpg-...-a`
+
+O hostname interno do Postgres só resolve entre serviços do Render na **mesma região** e no
+**mesmo ambiente/projeto**. Confira a região do Web Service (**Settings > Region**) e a do
+banco; se forem diferentes, o DNS privado não funciona.
+
+Saídas:
+
+1. Usar a **External Database URL** do banco na variável `ConnectionStrings__DefaultConnection`
+   (funciona de qualquer lugar, apenas um pouco mais lenta); ou
+2. recriar o banco na mesma região do serviço (o banco novo está vazio, então não se perde
+   nada) e usar a Internal URL.
+
+Esse hostname (`dpg-...-a`, sem domínio) nunca resolve a partir da sua máquina — isso é
+esperado.

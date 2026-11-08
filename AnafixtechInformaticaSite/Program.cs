@@ -4,6 +4,7 @@
 // requisição passa (middlewares), na ordem em que são executados.
 // =============================================================================================
 using AnafixtechInformaticaSite.Data;
+using AnafixtechInformaticaSite.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -156,17 +157,23 @@ app.Logger.LogInformation(
     bancoConfigurado.Host, bancoConfigurado.Port, bancoConfigurado.Database, bancoConfigurado.SslMode);
 
 // ---------------------------------------------------------------------------------------------
-// 4.1) Migrações automáticas (opcional)
+// 4.1) Migrações e dados iniciais (opcional)
 // Em produção, a imagem final não tem o SDK nem o dotnet-ef, então não dá para rodar
 // "dotnet ef database update" dentro do contêiner. Com Database__MigrateOnStartup=true, a
 // aplicação aplica as migrations pendentes ao iniciar. Em desenvolvimento fica desligado:
 // use "dotnet ef database update".
+//
+// Logo depois, o banco novo recebe os serviços do catálogo e a conta admin configurada no
+// ambiente. Tudo é idempotente: rodar de novo não duplica serviços nem usuários.
 // ---------------------------------------------------------------------------------------------
 if (builder.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
 {
     using var escopo = app.Services.CreateScope();
     var banco = escopo.ServiceProvider.GetRequiredService<AppDbContext>();
     banco.Database.Migrate();
+
+    StartupDataSeeder.SeedReferenceData(banco, app.Logger);
+    StartupDataSeeder.EnsureAdmin(banco, builder.Configuration, app.Logger);
 }
 
 // ---------------------------------------------------------------------------------------------

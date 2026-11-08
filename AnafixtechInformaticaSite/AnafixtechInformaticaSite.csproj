@@ -24,4 +24,10 @@
     <Folder Include="Views\ServiceRequest\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Dados iniciais (serviços e números da home). Ficam embutidos no binário para o
+         startup conseguir preencher um banco novo no Render, onde não há shell. -->
+    <EmbeddedResource Include="..\db\seed.sql" LogicalName="AnafixtechInformaticaSite.Data.seed.sql" />
+  </ItemGroup>
+
 </Project>

@@ -26,6 +26,12 @@ services:
       # O Render gera uma chave aleatória longa e guarda só no ambiente do serviço.
       - key: Jwt__SecretKey
         generateValue: true
+      # Conta admin criada no primeiro startup. A senha NÃO fica no repositório: adicione
+      # Admin__Password no painel do Render (Environment), com pelo menos 8 caracteres.
+      - key: Admin__Email
+        value: matheus.diniz.t@outlook.com
+      - key: Admin__Password
+        sync: false
 
 databases:
   - name: anafixtech-db
