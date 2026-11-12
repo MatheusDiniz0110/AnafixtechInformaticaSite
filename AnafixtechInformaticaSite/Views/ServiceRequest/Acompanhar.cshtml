@@ -103,7 +103,11 @@
             </div>
         </div>
     }
-    else if (Model.Buscou)
+    @* CORREÇÃO: a mensagem "não encontramos" só aparece quando o formulário foi enviado E os
+       campos estão válidos. Antes, ao digitar um protocolo inválido (ex.: "ABC"), a página
+       mostrava o erro do campo e, logo abaixo, também "Não encontramos essa solicitação" —
+       o que confundia o cliente. *@
+    else if (Model.Buscou && ViewData.ModelState.IsValid)
     {
         @* Quando o formulário foi enviado e nada foi encontrado. *@
         <div class="sr-card sr-alert" role="status">
