@@ -441,6 +441,13 @@ namespace AnafixtechInformaticaSite.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<string>("PhotoContentType")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<byte[]>("PhotoData")
+                        .HasColumnType("bytea");
+
                     b.Property<string>("PhotoPath")
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");

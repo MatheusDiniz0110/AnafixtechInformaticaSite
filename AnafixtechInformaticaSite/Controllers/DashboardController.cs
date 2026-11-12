@@ -1129,7 +1129,9 @@ namespace AnafixtechInformaticaSite.Controllers
             _context.ServiceRequests.Remove(solicitacao);
             await _context.SaveChangesAsync();
 
-            // Remove também a foto do disco, para não deixar arquivos órfãos ocupando espaço.
+            // Fotos NOVAS ficam na coluna PhotoData e somem junto com o registro (o DELETE acima
+            // já resolve). A limpeza abaixo cuida apenas de fotos ANTIGAS, gravadas em disco
+            // antes da mudança: apaga o arquivo para não deixar lixo em wwwroot.
             // Se o arquivo já não existir, o File.Delete não reclama.
             ApagarFotoDaSolicitacao(solicitacao.PhotoPath);
 

@@ -52,9 +52,23 @@ namespace AnafixtechInformaticaSite.Models
         public Service? Service { get; set; }
 
         // Caminho da foto enviada pelo cliente (ex.: /uploads/requests/abc123.jpg).
-        // Fica nulo quando o cliente não anexou imagem. O arquivo em si fica em wwwroot.
+        // Fica nulo quando o cliente não anexou imagem.
+        //
+        // MUDANÇA (fotos no banco): este campo passou a guardar apenas fotos ANTIGAS, gravadas
+        // em disco antes da migração. As novas fotos vão para as colunas PhotoData/PhotoContentType
+        // abaixo. Motivo: no Render (plano free) o disco é temporário e os arquivos de wwwroot
+        // desapareciam a cada deploy. Guardando a imagem no PostgreSQL, ela sobrevive aos deploys.
         [StringLength(300)]
         public string? PhotoPath { get; set; }
+
+        // Foto do equipamento gravada no próprio banco (coluna "bytea" no PostgreSQL).
+        // Fica nula quando o cliente não anexou imagem. O limite de 5 MB é validado no controller.
+        public byte[]? PhotoData { get; set; }
+
+        // Tipo real da imagem (image/jpeg, image/png ou image/webp). É o que o navegador usa
+        // para exibir a foto quando ela é entregue por /ServiceRequest/Foto/12.
+        [StringLength(50)]
+        public string? PhotoContentType { get; set; }
 
         // ---------- Andamento ----------
         public RequestStatus Status { get; set; } = RequestStatus.Pending; // toda solicitação nasce "Pendente"

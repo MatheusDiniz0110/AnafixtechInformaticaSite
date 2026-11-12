@@ -12,6 +12,14 @@
     var digitos = new string(Model.ContactPhone.Where(char.IsDigit).ToArray());
     if (digitos.Length is 10 or 11) { digitos = "55" + digitos; }
     var textoZap = Uri.EscapeDataString($"Olá, {Model.ContactName}! Aqui é da AnaFixTech sobre a sua solicitação {Model.Protocolo}.");
+
+    // Endereço da foto do equipamento:
+    //   - fotos novas ficam no PostgreSQL e são servidas por /ServiceRequest/Foto/{id}
+    //     (rota protegida: só admin vê a imagem);
+    //   - fotos antigas têm apenas o caminho em wwwroot (PhotoPath) e continuam funcionando.
+    var fotoUrl = Model.PhotoData is { Length: > 0 }
+        ? Url.Action("Foto", "ServiceRequest", new { id = Model.Id })
+        : Model.PhotoPath;
 }
 
 @* ===== Cabeçalho: protocolo, situação e botões ===== *@
@@ -73,11 +81,11 @@
         </dl>
 
         @* Foto enviada pelo cliente no formulário (opcional). *@
-        @if (!string.IsNullOrWhiteSpace(Model.PhotoPath))
+        @if (!string.IsNullOrWhiteSpace(fotoUrl))
         {
             <h2 class="db-mt">Foto do equipamento</h2>
-            <a href="@Model.PhotoPath" target="_blank" rel="noopener noreferrer">
-                <img src="@Model.PhotoPath" alt="Foto do equipamento enviada por @Model.ContactName" class="db-foto" />
+            <a href="@fotoUrl" target="_blank" rel="noopener noreferrer">
+                <img src="@fotoUrl" alt="Foto do equipamento enviada por @Model.ContactName" class="db-foto" />
             </a>
             <p class="db-muted db-mt-sm">Clique na imagem para abrir em tamanho real.</p>
         }

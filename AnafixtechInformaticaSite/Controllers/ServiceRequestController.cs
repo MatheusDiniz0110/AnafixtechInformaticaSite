@@ -23,13 +23,9 @@ namespace AnafixtechInformaticaSite.Controllers
         // Acesso ao banco, recebido por injeção de dependência.
         private readonly AppDbContext _context;
 
-        // Acesso às pastas do site (wwwroot) para salvar a foto do equipamento.
-        private readonly IWebHostEnvironment _ambiente;
-
-        public ServiceRequestController(AppDbContext context, IWebHostEnvironment ambiente)
+        public ServiceRequestController(AppDbContext context)
         {
             _context = context;
-            _ambiente = ambiente;
         }
 
         // Limite do arquivo de foto aceito no formulário público (5 MB).
@@ -99,14 +95,15 @@ namespace AnafixtechInformaticaSite.Controllers
 
             // ---------- Foto do equipamento (opcional) ----------
             // Só chega aqui se o restante do formulário estiver válido, para não gravar
-            // arquivo de um envio que será recusado.
-            string? caminhoFoto = null;
+            // imagem de um envio que será recusado.
+            byte[]? dadosFoto = null;
+            string? tipoFoto = null;
             if (vm.Photo is not null && vm.Photo.Length > 0)
             {
-                caminhoFoto = await SalvarFotoAsync(vm.Photo);
+                (dadosFoto, tipoFoto) = await LerFotoAsync(vm.Photo);
 
                 // O método devolve null quando o arquivo é inválido e já registrou o erro.
-                if (caminhoFoto is null)
+                if (dadosFoto is null)
                 {
                     await CarregarServicosAsync(vm);
                     return View(vm);
@@ -135,7 +132,10 @@ namespace AnafixtechInformaticaSite.Controllers
                 Status = RequestStatus.Pending,   // toda solicitação nasce pendente
                 RequestDate = Clock.Now,          // hora de Brasília
                 UserId = ObterUsuarioLogadoId(),  // null quando o visitante não está logado
-                PhotoPath = caminhoFoto           // null quando não anexou foto
+
+                // Foto guardada no banco (não mais em disco): sobrevive aos redeploys do Render.
+                PhotoData = dadosFoto,
+                PhotoContentType = tipoFoto
             };
 
             _context.ServiceRequests.Add(solicitacao);
@@ -219,19 +219,57 @@ namespace AnafixtechInformaticaSite.Controllers
         }
 
         // =========================================================================================
+        // FOTO DO EQUIPAMENTO (somente para a equipe)
+        // =========================================================================================
+
+        // Entrega a imagem guardada no banco.  →  GET /ServiceRequest/Foto/12
+        // A classe já exige login de administrador ([Authorize(Policy = "Admin")]), porque a foto
+        // pode mostrar dados do cliente e não deve ficar acessível a qualquer visitante.
+        [HttpGet]
+        public async Task<IActionResult> Foto(int id)
+        {
+            // Carrega só as duas colunas da imagem: evita trazer a solicitação inteira
+            // (descrição, anotações internas etc.) apenas para exibir uma foto.
+            var foto = await _context.ServiceRequests
+                .AsNoTracking()
+                .Where(s => s.Id == id)
+                .Select(s => new { s.PhotoData, s.PhotoContentType })
+                .FirstOrDefaultAsync();
+
+            // Sem foto (ou registro inexistente): 404, sem imagem quebrada na tela.
+            if (foto?.PhotoData is null || foto.PhotoData.Length == 0)
+                return NotFound();
+
+            // O tipo foi decidido pelos bytes no upload (image/jpeg, image/png ou image/webp).
+            var tipo = string.IsNullOrWhiteSpace(foto.PhotoContentType)
+                ? "application/octet-stream"
+                : foto.PhotoContentType;
+
+            // "private": o navegador do admin pode guardar por 5 minutos, mas nenhum cache
+            // compartilhado (proxy/CDN) deve servir essa imagem para outra pessoa.
+            Response.Headers.CacheControl = "private, max-age=300";
+
+            return File(foto.PhotoData, tipo);
+        }
+
+        // =========================================================================================
         // MÉTODOS AUXILIARES (privados)
         // =========================================================================================
 
-        // Valida e grava a foto do equipamento em wwwroot/uploads/requests.
-        // Devolve o caminho público (ex.: /uploads/requests/abc.jpg) ou null se o arquivo não servir.
-        private async Task<string?> SalvarFotoAsync(IFormFile foto)
+        // Valida a foto do equipamento e devolve os BYTES e o tipo real da imagem.
+        // Devolve (null, null) quando o arquivo não serve, já registrando o erro na tela.
+        //
+        // Antes esta rotina gravava o arquivo em wwwroot/uploads/requests. Agora a imagem fica
+        // na memória e é gravada na coluna PhotoData (bytea) do PostgreSQL, porque o disco do
+        // Render free é temporário e apagava as fotos a cada deploy.
+        private async Task<(byte[]? Dados, string? Tipo)> LerFotoAsync(IFormFile foto)
         {
             // 1) Tamanho
             if (foto.Length > TamanhoMaximoFoto)
             {
                 ModelState.AddModelError(nameof(ServiceRequestFormViewModel.Photo),
                     "A foto pode ter no máximo 5 MB.");
-                return null;
+                return (null, null);
             }
 
             // 2) Extensão: barra arquivos executáveis (.exe, .php...) com nome disfarçado
@@ -240,47 +278,34 @@ namespace AnafixtechInformaticaSite.Controllers
             {
                 ModelState.AddModelError(nameof(ServiceRequestFormViewModel.Photo),
                     "Envie uma imagem JPG, PNG ou WEBP.");
-                return null;
+                return (null, null);
             }
 
-            // 3) Conteúdo: confere os primeiros bytes. É o que garante que é mesmo uma imagem,
-            //    e não um programa renomeado para .jpg.
-            await using var leitura = foto.OpenReadStream();
-            var cabecalho = new byte[12];
-            var lidos = await leitura.ReadAsync(cabecalho.AsMemory(0, cabecalho.Length));
+            // 3) Lê o arquivo inteiro para a memória (no máximo 5 MB, conferido acima).
+            using var memoria = new MemoryStream();
+            await foto.CopyToAsync(memoria);
+            var dados = memoria.ToArray();
 
-            var ehJpg = lidos >= 3 && cabecalho[0] == 0xFF && cabecalho[1] == 0xD8 && cabecalho[2] == 0xFF;
-            var ehPng = lidos >= 8 && cabecalho[0] == 0x89 && cabecalho[1] == 0x50 &&
-                        cabecalho[2] == 0x4E && cabecalho[3] == 0x47;
-            var ehWebp = lidos >= 12 && cabecalho[0] == 0x52 && cabecalho[1] == 0x49 &&
-                         cabecalho[2] == 0x46 && cabecalho[3] == 0x46 &&
-                         cabecalho[8] == 0x57 && cabecalho[9] == 0x45 &&
-                         cabecalho[10] == 0x42 && cabecalho[11] == 0x50;
+            // 4) Conteúdo: confere os primeiros bytes. É o que garante que é mesmo uma imagem,
+            //    e não um programa renomeado para .jpg.
+            var ehJpg = dados.Length >= 3 && dados[0] == 0xFF && dados[1] == 0xD8 && dados[2] == 0xFF;
+            var ehPng = dados.Length >= 8 && dados[0] == 0x89 && dados[1] == 0x50 &&
+                        dados[2] == 0x4E && dados[3] == 0x47;
+            var ehWebp = dados.Length >= 12 && dados[0] == 0x52 && dados[1] == 0x49 &&
+                         dados[2] == 0x46 && dados[3] == 0x46 &&
+                         dados[8] == 0x57 && dados[9] == 0x45 &&
+                         dados[10] == 0x42 && dados[11] == 0x50;
 
             if (!(ehJpg || ehPng || ehWebp))
             {
                 ModelState.AddModelError(nameof(ServiceRequestFormViewModel.Photo),
                     "O arquivo enviado não parece ser uma imagem válida.");
-                return null;
+                return (null, null);
             }
 
-            // 4) Gravação com nome aleatório (GUID): evita nomes repetidos e impede que alguém
-            //    adivinhe o endereço da foto de outra pessoa.
-            var pasta = Path.Combine(_ambiente.WebRootPath, "uploads", "requests");
-            Directory.CreateDirectory(pasta);
-
-            var nomeArquivo = $"{Guid.NewGuid():N}{extensao}";
-            var caminhoCompleto = Path.Combine(pasta, nomeArquivo);
-
-            // Volta o ponteiro ao início antes de copiar o arquivo inteiro.
-            leitura.Position = 0;
-
-            await using (var destino = System.IO.File.Create(caminhoCompleto))
-            {
-                await leitura.CopyToAsync(destino);
-            }
-
-            return $"/uploads/requests/{nomeArquivo}";
+            // O tipo é decidido pelos bytes, não pelo que o navegador informou no upload.
+            var tipo = ehJpg ? "image/jpeg" : ehPng ? "image/png" : "image/webp";
+            return (dados, tipo);
         }
 
         // Preenche a lista de serviços do <select>, em ordem alfabética.
