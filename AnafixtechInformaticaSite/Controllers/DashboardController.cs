@@ -23,6 +23,13 @@ namespace AnafixtechInformaticaSite.Controllers
         // Máximo de linhas mostradas nas tabelas grandes (evita páginas gigantes).
         private const int LimiteLinhas = 300;
 
+        // Situações gravadas em Service.Status que significam "fora do catálogo público".
+        // É a mesma regra usada em Views/Services/Index.cshtml.
+        private static readonly string[] StatusServicoInativo =
+        {
+            "inativo", "inactive", "indisponivel", "indisponível", "desativado", "oculto"
+        };
+
         // Acesso ao banco de dados, recebido por injeção de dependência.
         private readonly AppDbContext _context;
 
@@ -538,6 +545,94 @@ namespace AnafixtechInformaticaSite.Controllers
             return RedirectToAction(nameof(Financeiro));
         }
 
+        // Formulário de edição de um lançamento já existente.  →  GET /Dashboard/LancamentoEditar/12
+        [HttpGet]
+        public async Task<IActionResult> LancamentoEditar(int id)
+        {
+            var lancamento = await _context.FinancialEntries.AsNoTracking()
+                .FirstOrDefaultAsync(f => f.Id == id);
+
+            if (lancamento == null) return NotFound();
+
+            // Copia os dados do banco para o mesmo formulário usado no cadastro.
+            var vm = new LancamentoFormViewModel
+            {
+                Id = lancamento.Id,
+                Origem = lancamento.Origem,
+                Data = lancamento.Data,
+                Tipo = lancamento.Tipo,
+                Categoria = lancamento.Categoria,
+                Descricao = lancamento.Descricao,
+                // "0.00" com ponto: o MoneyParser entende tanto ponto quanto vírgula.
+                Valor = lancamento.Valor.ToString("0.00", CultureInfo.InvariantCulture),
+                PagadorRecebedor = lancamento.PagadorRecebedor,
+                FormaPagamento = lancamento.FormaPagamento,
+                ServicoPeca = lancamento.ServicoPeca,
+                Observacoes = lancamento.Observacoes,
+                Socio = lancamento.Socio
+            };
+
+            return View("LancamentoNovo", vm);
+        }
+
+        // Grava a edição do lançamento.  →  POST /Dashboard/LancamentoEditar
+        [HttpPost]
+        public async Task<IActionResult> LancamentoEditar(LancamentoFormViewModel vm)
+        {
+            // O valor digitado precisa ser um número maior que zero.
+            if (!MoneyParser.TryParse(vm.Valor, out var valor) || valor <= 0)
+                ModelState.AddModelError(nameof(vm.Valor), "Valor inválido. Use o formato 120,50.");
+
+            var lancamento = await _context.FinancialEntries.FirstOrDefaultAsync(f => f.Id == vm.Id);
+            if (lancamento == null) return NotFound();
+
+            // Lançamentos gerados pelo sistema (pagamento de OS ou compra de estoque) têm
+            // um tipo fixo; deixar trocar desalinharia o financeiro da OS/estoque.
+            if (lancamento.Origem != EntryOrigin.Manual)
+                vm.Tipo = lancamento.Tipo;
+
+            if (!ModelState.IsValid)
+            {
+                vm.Id = lancamento.Id;
+                vm.Origem = lancamento.Origem;
+                return View("LancamentoNovo", vm);
+            }
+
+            var valorAnterior = lancamento.Valor;
+
+            // Aplica os campos editados. Origem, vínculos e data de criação são preservados.
+            lancamento.Data = vm.Data!.Value;
+            lancamento.Tipo = vm.Tipo;
+            lancamento.Categoria = vm.Categoria.Trim();
+            lancamento.Descricao = vm.Descricao.Trim();
+            lancamento.Valor = valor;
+            lancamento.PagadorRecebedor = string.IsNullOrWhiteSpace(vm.PagadorRecebedor) ? null : vm.PagadorRecebedor.Trim();
+            lancamento.FormaPagamento = vm.FormaPagamento;
+            lancamento.ServicoPeca = string.IsNullOrWhiteSpace(vm.ServicoPeca) ? null : vm.ServicoPeca.Trim();
+            lancamento.Observacoes = string.IsNullOrWhiteSpace(vm.Observacoes) ? null : vm.Observacoes.Trim();
+            lancamento.Socio = vm.Socio;
+
+            // Se era pagamento de OS, ajusta o total recebido da OS pela diferença do valor,
+            // mantendo o status de pagamento coerente (mesmo padrão da exclusão).
+            if (lancamento.Origem == EntryOrigin.OS && lancamento.ServiceOrderId.HasValue)
+            {
+                var pedido = await _context.ServiceOrders.FirstOrDefaultAsync(o => o.Id == lancamento.ServiceOrderId.Value);
+                if (pedido != null)
+                {
+                    pedido.ValorRecebido = Math.Max(0m, pedido.ValorRecebido - valorAnterior + valor);
+                    var devido = pedido.FinalPrice ?? pedido.EstimatedPrice;
+                    if (devido.HasValue)
+                        pedido.PaymentStatus = CalcularPagamento(devido.Value, pedido.ValorRecebido);
+                    pedido.UpdatedAt = Clock.Now;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            Mensagem(true, "Lançamento atualizado.");
+            return RedirectToAction(nameof(Financeiro));
+        }
+
         // Exclui um lançamento.  →  POST /Dashboard/LancamentoExcluir
         [HttpPost]
         public async Task<IActionResult> LancamentoExcluir(int id)
@@ -564,6 +659,125 @@ namespace AnafixtechInformaticaSite.Controllers
 
             Mensagem(true, "Lançamento excluído.");
             return RedirectToAction(nameof(Financeiro));
+        }
+
+        // =========================================================================================
+        // ABA: SERVIÇOS (catálogo exibido no site)
+        // =========================================================================================
+
+        // Lista todos os serviços, ativos e inativos, com busca por nome, categoria ou descrição.
+        // →  /Dashboard/Servicos?busca=formata
+        public async Task<IActionResult> Servicos(string? busca)
+        {
+            var consulta = _context.Services.AsNoTracking().AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(busca))
+            {
+                var termo = busca.Trim();
+                consulta = consulta.Where(s => s.Title.Contains(termo)
+                                            || s.Class.Contains(termo)
+                                            || s.Description.Contains(termo));
+            }
+
+            var servicos = await consulta.OrderBy(s => s.Class).ThenBy(s => s.Title).ToListAsync();
+
+            var vm = new ServicosViewModel
+            {
+                Busca = busca,
+                // A situação é gravada como texto; aqui já dizemos à view se está ativo.
+                Servicos = servicos.Select(s => new ServicoResumo { Servico = s, Ativo = ServicoEstaAtivo(s) }).ToList()
+            };
+            return View(vm);
+        }
+
+        // Formulário de novo serviço.  →  GET /Dashboard/ServicoNovo
+        [HttpGet]
+        public IActionResult ServicoNovo()
+        {
+            return View("ServicoForm", new ServicoFormViewModel());
+        }
+
+        // Grava o novo serviço.  →  POST /Dashboard/ServicoNovo
+        [HttpPost]
+        public async Task<IActionResult> ServicoNovo(ServicoFormViewModel vm)
+        {
+            if (!TentarLerPrecoServico(vm.Price, out var preco)) return View("ServicoForm", vm);
+            if (!ModelState.IsValid) return View("ServicoForm", vm);
+
+            _context.Services.Add(new Service
+            {
+                Class = vm.Class.Trim(),
+                Title = vm.Title.Trim(),
+                Description = vm.Description.Trim(),
+                Price = preco,
+                Status = vm.Ativo ? "Ativo" : "Inativo"
+            });
+            await _context.SaveChangesAsync();
+
+            Mensagem(true, $"Serviço “{vm.Title.Trim()}” cadastrado.");
+            return RedirectToAction(nameof(Servicos));
+        }
+
+        // Formulário de edição de um serviço.  →  GET /Dashboard/ServicoEditar/12
+        [HttpGet]
+        public async Task<IActionResult> ServicoEditar(int id)
+        {
+            var servico = await _context.Services.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+            if (servico == null) return NotFound();
+
+            var vm = new ServicoFormViewModel
+            {
+                Id = servico.Id,
+                Class = servico.Class,
+                Title = servico.Title,
+                Description = servico.Description,
+                Price = servico.Price.ToString("0.00", CultureInfo.InvariantCulture),
+                Ativo = ServicoEstaAtivo(servico)
+            };
+            return View("ServicoForm", vm);
+        }
+
+        // Grava a edição do serviço.  →  POST /Dashboard/ServicoEditar
+        [HttpPost]
+        public async Task<IActionResult> ServicoEditar(ServicoFormViewModel vm)
+        {
+            if (!TentarLerPrecoServico(vm.Price, out var preco)) return View("ServicoForm", vm);
+            if (!ModelState.IsValid) return View("ServicoForm", vm);
+
+            var servico = await _context.Services.FirstOrDefaultAsync(s => s.Id == vm.Id);
+            if (servico == null) return NotFound();
+
+            servico.Class = vm.Class.Trim();
+            servico.Title = vm.Title.Trim();
+            servico.Description = vm.Description.Trim();
+            servico.Price = preco;
+            servico.Status = vm.Ativo ? "Ativo" : "Inativo";
+
+            await _context.SaveChangesAsync();
+
+            Mensagem(true, $"Serviço “{servico.Title}” atualizado.");
+            return RedirectToAction(nameof(Servicos));
+        }
+
+        // Exclui um serviço do catálogo.  →  POST /Dashboard/ServicoExcluir
+        [HttpPost]
+        public async Task<IActionResult> ServicoExcluir(int id)
+        {
+            var servico = await _context.Services.FirstOrDefaultAsync(s => s.Id == id);
+            if (servico == null) return NotFound();
+
+            // Desvincula OS e solicitações que citavam este serviço (elas continuam existindo).
+            var pedidos = await _context.ServiceOrders.Where(o => o.ServiceId == id).ToListAsync();
+            foreach (var o in pedidos) o.ServiceId = null;
+
+            var solicitacoes = await _context.ServiceRequests.Where(s => s.ServiceId == id).ToListAsync();
+            foreach (var s in solicitacoes) s.ServiceId = null;
+
+            _context.Services.Remove(servico);
+            await _context.SaveChangesAsync();
+
+            Mensagem(true, $"Serviço “{servico.Title}” excluído.");
+            return RedirectToAction(nameof(Servicos));
         }
 
         // =========================================================================================
@@ -1271,6 +1485,27 @@ namespace AnafixtechInformaticaSite.Controllers
         private async Task CarregarServicosAsync(PedidoFormViewModel vm)
         {
             vm.Servicos = await _context.Services.AsNoTracking().OrderBy(s => s.Title).ToListAsync();
+        }
+
+        // Um serviço está ativo quando a situação gravada não é uma das palavras de inatividade.
+        // Status vazio (como nos registros antigos) conta como ativo, igual à vitrine do site.
+        private static bool ServicoEstaAtivo(Service servico)
+        {
+            var status = (servico.Status ?? string.Empty).Trim().ToLowerInvariant();
+            return !StatusServicoInativo.Contains(status);
+        }
+
+        // Lê o preço do formulário de serviço: vazio ou inválido vira erro de validação.
+        private bool TentarLerPrecoServico(string? texto, out decimal preco)
+        {
+            preco = 0m;
+            if (!MoneyParser.TryParse(texto, out var convertido) || convertido < 0)
+            {
+                ModelState.AddModelError("Price", "Preço inválido. Use o formato 120,50.");
+                return false;
+            }
+            preco = convertido;
+            return true;
         }
 
         // Mesma lista, para o formulário de edição de solicitação.

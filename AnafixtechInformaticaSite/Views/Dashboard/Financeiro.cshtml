@@ -133,11 +133,14 @@
                     <td><span class="db-badge db-badge--gray">@l.Origem.ToLabel()</span></td>
                     <td class="db-num"><strong class="@(l.Tipo == EntryType.Entrada ? "db-pos" : "db-neg")">@(l.Tipo == EntryType.Entrada ? "+" : "−") @Fmt.Money(l.Valor)</strong></td>
                     <td class="db-num">
-                        @* Excluir pede confirmação no navegador. *@
-                        <form asp-controller="Dashboard" asp-action="LancamentoExcluir" method="post" class="db-inline" onsubmit="return confirm('Excluir este lançamento?');">
-                            <input type="hidden" name="id" value="@l.Id" />
-                            <button type="submit" class="db-btn db-btn--danger db-btn--sm">Excluir</button>
-                        </form>
+                        @* Editar abre o formulário já preenchido; excluir pede confirmação. *@
+                        <div class="db-inline">
+                            <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="LancamentoEditar" asp-route-id="@l.Id">Editar</a>
+                            <form asp-controller="Dashboard" asp-action="LancamentoExcluir" method="post" class="db-inline" onsubmit="return confirm('Excluir este lançamento?');">
+                                <input type="hidden" name="id" value="@l.Id" />
+                                <button type="submit" class="db-btn db-btn--danger db-btn--sm">Excluir</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
             }

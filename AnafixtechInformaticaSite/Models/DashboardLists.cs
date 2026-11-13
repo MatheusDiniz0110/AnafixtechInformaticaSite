@@ -27,5 +27,12 @@ namespace AnafixtechInformaticaSite.Models
             "memoria", "armazenamento", "processador", "placa_mae", "fonte",
             "cooler", "tela", "teclado", "bateria", "cabo", "outro"
         };
+
+        // Categorias (classes) dos serviços do catálogo. É só uma sugestão: o formulário
+        // aceita qualquer texto, para não perder categorias antigas já gravadas.
+        public static readonly string[] CategoriasServico =
+        {
+            "Software", "Hardware", "Dados", "Consultoria"
+        };
     }
 }

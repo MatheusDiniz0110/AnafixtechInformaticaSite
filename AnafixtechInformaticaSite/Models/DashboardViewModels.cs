@@ -122,9 +122,17 @@ namespace AnafixtechInformaticaSite.Models.ViewModels
         public bool Cortado { get; set; }           // true = havia mais linhas do que o limite exibido
     }
 
-    // Formulário de novo lançamento financeiro.
+    // Formulário de lançamento financeiro (novo ou edição).
     public class LancamentoFormViewModel
     {
+        // 0 = novo lançamento; maior que zero = lançamento sendo editado.
+        public int Id { get; set; }
+
+        // Origem gravada no banco. Só serve para a tela avisar quando o lançamento
+        // foi gerado por uma OS ou por uma compra de estoque (não vem do formulário).
+        [BindNever, ValidateNever]
+        public EntryOrigin? Origem { get; set; }
+
         [Display(Name = "Data")]
         [Required(ErrorMessage = "Informe a data.")]
         public DateOnly? Data { get; set; }
@@ -194,6 +202,50 @@ namespace AnafixtechInformaticaSite.Models.ViewModels
         [StringLength(120)] public string? Supplier { get; set; }
         [StringLength(120)] public string? Location { get; set; }
         [StringLength(500)] public string? Description { get; set; }
+    }
+
+    // =====================================================================
+    // SERVIÇOS (catálogo exibido no site)
+    // =====================================================================
+    // Uma linha da lista: o serviço + se ele está ativo (a situação é gravada como texto).
+    public class ServicoResumo
+    {
+        public Service Servico { get; set; } = new();
+        public bool Ativo { get; set; }
+    }
+
+    public class ServicosViewModel
+    {
+        public List<ServicoResumo> Servicos { get; set; } = new(); // serviços da tabela
+        public string? Busca { get; set; }                         // texto da busca
+        public int Ativos => Servicos.Count(s => s.Ativo);         // contador exibido no topo
+        public int Inativos => Servicos.Count(s => !s.Ativo);
+    }
+
+    // Formulário de serviço (novo ou edição).
+    public class ServicoFormViewModel
+    {
+        // 0 = novo serviço; maior que zero = serviço sendo editado.
+        public int Id { get; set; }
+
+        [Display(Name = "Categoria")]
+        [Required(ErrorMessage = "Informe a categoria."), StringLength(40)]
+        public string Class { get; set; } = "Software";
+
+        [Display(Name = "Nome do serviço")]
+        [Required(ErrorMessage = "Informe o nome do serviço."), StringLength(120)]
+        public string Title { get; set; } = string.Empty;
+
+        [Display(Name = "Descrição")]
+        [Required(ErrorMessage = "Informe a descrição."), StringLength(600)]
+        public string Description { get; set; } = string.Empty;
+
+        [Display(Name = "Preço")]
+        [Required(ErrorMessage = "Informe o preço (ex.: 120,50).")]
+        public string Price { get; set; } = string.Empty; // texto; convertido com MoneyParser
+
+        [Display(Name = "Serviço ativo no site")]
+        public bool Ativo { get; set; } = true;
     }
 
     // =====================================================================

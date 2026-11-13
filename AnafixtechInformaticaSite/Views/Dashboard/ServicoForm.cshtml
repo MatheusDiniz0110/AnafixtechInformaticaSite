@@ -1,0 +1,77 @@
+@* Formulário de serviço do catálogo: novo ou edição. Recebe um ServicoFormViewModel. *@
+@model ServicoFormViewModel
+@{
+    Layout = "_DashboardLayout";
+
+    // Id maior que zero = estamos editando um serviço já existente.
+    var editando = Model.Id > 0;
+    var acao = editando ? "ServicoEditar" : "ServicoNovo";
+
+    ViewData["Title"] = editando ? "Editar serviço" : "Novo serviço";
+    ViewData["Tab"] = "Servicos";
+}
+
+<div class="db-card-head">
+    <h2>@(editando ? "Editar serviço" : "Novo serviço")</h2>
+    <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="Servicos">← Voltar</a>
+</div>
+
+<div class="db-card">
+    @* Envia os dados para ServicoNovo (cadastro) ou ServicoEditar (edição). *@
+    <form asp-controller="Dashboard" asp-action="@acao" method="post" class="db-form">
+        <div asp-validation-summary="ModelOnly" class="db-alert db-alert--erro db-field--full"></div>
+
+        @* Na edição, o Id diz qual serviço será atualizado. *@
+        @if (editando)
+        {
+            <input type="hidden" name="Id" value="@Model.Id" />
+        }
+
+        <div class="db-field">
+            <label asp-for="Class"></label>
+            @* Aceita as categorias sugeridas e também categorias antigas já gravadas. *@
+            <input asp-for="Class" class="db-input" list="categorias-servico" />
+            <datalist id="categorias-servico">
+                @foreach (var c in DashboardLists.CategoriasServico)
+                {
+                    <option value="@c"></option>
+                }
+            </datalist>
+            <span asp-validation-for="Class" class="db-error"></span>
+        </div>
+
+        <div class="db-field">
+            <label asp-for="Price"></label>
+            <input asp-for="Price" class="db-input" inputmode="decimal" placeholder="0,00" />
+            <span asp-validation-for="Price" class="db-error"></span>
+        </div>
+
+        <div class="db-field db-field--full">
+            <label asp-for="Title"></label>
+            <input asp-for="Title" class="db-input" />
+            <span asp-validation-for="Title" class="db-error"></span>
+        </div>
+
+        <div class="db-field db-field--full">
+            <label asp-for="Description"></label>
+            <textarea asp-for="Description" class="db-textarea" rows="4"></textarea>
+            <span asp-validation-for="Description" class="db-error"></span>
+        </div>
+
+        <div class="db-field db-field--full">
+            <label class="db-check">
+                <input asp-for="Ativo" />
+                <span>@Html.DisplayNameFor(m => m.Ativo)</span>
+            </label>
+            <div class="db-muted">Serviços inativos continuam no painel, mas não aparecem no catálogo do site.</div>
+        </div>
+
+        <div class="db-field db-field--full">
+            <button type="submit" class="db-btn db-btn--primary">@(editando ? "Salvar alterações" : "Cadastrar serviço")</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,72 @@
+@* Aba "Serviços": catálogo do site, com ativos e inativos. Recebe um ServicosViewModel. *@
+@model ServicosViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Serviços";
+    ViewData["Tab"] = "Servicos";
+}
+
+<div class="db-card-head">
+    <h2>Serviços do catálogo</h2>
+    <a class="db-btn db-btn--primary" asp-controller="Dashboard" asp-action="ServicoNovo">+ Novo serviço</a>
+</div>
+
+@* Contadores e busca por nome, categoria ou descrição. *@
+<div class="db-inline db-mb">
+    <span class="db-badge db-badge--green">@Model.Ativos ativo(s)</span>
+    <span class="db-badge db-badge--gray">@Model.Inativos inativo(s)</span>
+</div>
+
+<form method="get" asp-controller="Dashboard" asp-action="Servicos" class="db-form db-mb">
+    <div class="db-field db-field--full">
+        <input class="db-input" name="busca" value="@Model.Busca" placeholder="Buscar por nome, categoria ou descrição" />
+    </div>
+    <div class="db-field"><button type="submit" class="db-btn">Buscar</button></div>
+    @if (!string.IsNullOrWhiteSpace(Model.Busca))
+    {
+        <div class="db-field">
+            <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="Servicos">Limpar</a>
+        </div>
+    }
+</form>
+
+@* Tabela do catálogo. Serviços inativos continuam aqui para poderem ser reativados. *@
+<div class="db-table-wrap">
+    <table class="db-table">
+        <thead>
+            <tr><th>Serviço</th><th>Categoria</th><th class="db-num">Preço</th><th>Situação</th><th>Ações</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var linha in Model.Servicos)
+            {
+                <tr>
+                    <td>
+                        <strong>@linha.Servico.Title</strong>
+                        <div class="db-muted">@linha.Servico.Description</div>
+                    </td>
+                    <td>@linha.Servico.Class</td>
+                    <td class="db-num">@Fmt.Money(linha.Servico.Price)</td>
+                    <td>
+                        <span class="db-badge db-badge--@(linha.Ativo ? "green" : "gray")">
+                            @(linha.Ativo ? "Ativo" : "Inativo")
+                        </span>
+                    </td>
+                    <td>
+                        <div class="db-inline">
+                            <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="ServicoEditar" asp-route-id="@linha.Servico.Id">Editar</a>
+                            @* Excluir pede confirmação e também desvincula OS/solicitações que usavam o serviço. *@
+                            <form asp-controller="Dashboard" asp-action="ServicoExcluir" method="post" class="db-inline" onsubmit="return confirm('Excluir este serviço do catálogo?');">
+                                <input type="hidden" name="id" value="@linha.Servico.Id" />
+                                <button type="submit" class="db-btn db-btn--danger db-btn--sm">Excluir</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Servicos.Any())
+            {
+                <tr><td colspan="5" class="db-empty">Nenhum serviço encontrado.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

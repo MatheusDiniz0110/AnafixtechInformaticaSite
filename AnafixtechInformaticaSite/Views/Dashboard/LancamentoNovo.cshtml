@@ -1,33 +1,66 @@
-@* Formulário de novo lançamento financeiro. Recebe um LancamentoFormViewModel. *@
+@* Formulário de lançamento financeiro: novo ou edição. Recebe um LancamentoFormViewModel. *@
 @model LancamentoFormViewModel
 @{
     Layout = "_DashboardLayout";
-    ViewData["Title"] = "Novo lançamento";
+
+    // Id maior que zero = estamos editando um lançamento já existente.
+    var editando = Model.Id > 0;
+    var acao = editando ? "LancamentoEditar" : "LancamentoNovo";
+
+    // Lançamentos gerados por OS ou compra de estoque têm o tipo travado.
+    var tipoFixo = Model.Origem.HasValue && Model.Origem != EntryOrigin.Manual;
+
+    ViewData["Title"] = editando ? "Editar lançamento" : "Novo lançamento";
     ViewData["Tab"] = "Financeiro";
 
     // Data do campo no formato aaaa-mm-dd (vazio se ainda não houver).
     var dataIso = Model.Data.HasValue ? Model.Data.Value.ToString("yyyy-MM-dd") : "";
+
+    // Categoria/sócio antigos podem não estar nas listas fixas: nesse caso acrescentamos
+    // a opção atual ao <select> para a edição não perder o valor gravado.
+    var categoriaAtualForaDaLista = !string.IsNullOrWhiteSpace(Model.Categoria)
+        && !DashboardLists.CategoriasEntrada.Contains(Model.Categoria)
+        && !DashboardLists.CategoriasSaida.Contains(Model.Categoria);
+    var socioAtualForaDaLista = !string.IsNullOrWhiteSpace(Model.Socio)
+        && !DashboardLists.Socios.Contains(Model.Socio);
 }
 
 <div class="db-card-head">
-    <h2>Novo lançamento</h2>
+    <h2>@(editando ? "Editar lançamento" : "Novo lançamento")</h2>
     <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="Financeiro">← Voltar</a>
 </div>
 
 <div class="db-card">
-    @* Envia os dados para a action LancamentoNovo (POST). *@
-    <form asp-controller="Dashboard" asp-action="LancamentoNovo" method="post" class="db-form">
+    @* Envia os dados para LancamentoNovo (cadastro) ou LancamentoEditar (edição). *@
+    <form asp-controller="Dashboard" asp-action="@acao" method="post" class="db-form">
         <div asp-validation-summary="ModelOnly" class="db-alert db-alert--erro db-field--full"></div>
+
+        @* Na edição, o Id diz qual lançamento será atualizado. *@
+        @if (editando)
+        {
+            <input type="hidden" name="Id" value="@Model.Id" />
+        }
 
         @* Tipo: entrada ou saída. *@
         <div class="db-field">
             <label asp-for="Tipo"></label>
-            <select name="Tipo" class="db-select">
-                @foreach (var t in Enum.GetValues<EntryType>())
-                {
-                    <option value="@t" selected="@(Model.Tipo == t)">@t.ToLabel()</option>
-                }
-            </select>
+            @if (tipoFixo)
+            {
+                <input type="hidden" name="Tipo" value="@Model.Tipo" />
+                <select class="db-select" disabled>
+                    <option selected>@Model.Tipo.ToLabel()</option>
+                </select>
+                <div class="db-muted">Gerado por @(Model.Origem?.ToLabel()) — o tipo não pode ser alterado.</div>
+            }
+            else
+            {
+                <select name="Tipo" class="db-select">
+                    @foreach (var t in Enum.GetValues<EntryType>())
+                    {
+                        <option value="@t" selected="@(Model.Tipo == t)">@t.ToLabel()</option>
+                    }
+                </select>
+            }
         </div>
 
         @* Data do lançamento. *@
@@ -61,6 +94,10 @@
                         <option value="@c" selected="@(Model.Categoria == c)">@c</option>
                     }
                 </optgroup>
+                @if (categoriaAtualForaDaLista)
+                {
+                    <option value="@Model.Categoria" selected>@Model.Categoria (categoria atual)</option>
+                }
             </select>
             <span asp-validation-for="Categoria" class="db-error"></span>
         </div>
@@ -93,6 +130,10 @@
                 {
                     <option value="@s" selected="@(Model.Socio == s)">@s</option>
                 }
+                @if (socioAtualForaDaLista)
+                {
+                    <option value="@Model.Socio" selected>@Model.Socio (atual)</option>
+                }
             </select>
         </div>
 
@@ -107,7 +148,7 @@
         </div>
 
         <div class="db-field db-field--full">
-            <button type="submit" class="db-btn db-btn--primary">Salvar lançamento</button>
+            <button type="submit" class="db-btn db-btn--primary">@(editando ? "Salvar alterações" : "Salvar lançamento")</button>
         </div>
     </form>
 </div>
