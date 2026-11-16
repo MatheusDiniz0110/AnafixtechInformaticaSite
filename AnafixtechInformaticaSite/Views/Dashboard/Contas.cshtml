@@ -1,0 +1,143 @@
+@* Aba "Contas": assinaturas, redes sociais e outras contas da empresa. Recebe um ContasViewModel. *@
+@model ContasViewModel
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Contas";
+    ViewData["Tab"] = "Contas";
+}
+
+<div class="db-card-head">
+    <h2>Contas e assinaturas</h2>
+    <a class="db-btn db-btn--primary" asp-controller="Dashboard" asp-action="ContaNova">+ Nova conta</a>
+</div>
+
+@* Contadores e custo estimado (só contas ativas; ciclos diferentes são convertidos para mês). *@
+<div class="db-inline db-mb">
+    <span class="db-badge db-badge--green">@Model.Ativas ativa(s)</span>
+    <span class="db-badge db-badge--gray">@Model.Inativas inativa(s)</span>
+    <span class="db-badge db-badge--blue">Custo mensal estimado: @Fmt.Money(Model.TotalMensal)</span>
+    <span class="db-badge db-badge--purple">Custo anual estimado: @Fmt.Money(Model.TotalAnual)</span>
+</div>
+<div class="db-muted db-mb">
+    O custo mensal soma as contas ativas; cobranças trimestrais, semestrais e anuais são divididas
+    pelo número de meses. Pagamento único não entra na conta.
+</div>
+
+@* Busca por nome, tipo, app, descrição ou e-mail de login. *@
+<form method="get" asp-controller="Dashboard" asp-action="Contas" class="db-form db-mb">
+    <div class="db-field db-field--full">
+        <input class="db-input" name="busca" value="@Model.Busca" placeholder="Buscar por nome, tipo, app ou e-mail de login" />
+    </div>
+    <div class="db-field"><button type="submit" class="db-btn">Buscar</button></div>
+    @if (!string.IsNullOrWhiteSpace(Model.Busca))
+    {
+        <div class="db-field">
+            <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="Contas">Limpar</a>
+        </div>
+    }
+</form>
+
+<div class="db-table-wrap">
+    <table class="db-table">
+        <thead>
+            <tr>
+                <th>Conta</th>
+                <th>Tipo</th>
+                <th>Cobrança</th>
+                <th class="db-num">Preço</th>
+                <th>Login</th>
+                <th>Senha</th>
+                <th>Situação</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var conta in Model.Contas)
+            {
+                @* Só criamos link quando o endereço é http/https (evita links perigosos gravados por engano). *@
+                var urlSegura = !string.IsNullOrWhiteSpace(conta.Url)
+                    && Uri.TryCreate(conta.Url, UriKind.Absolute, out var endereco)
+                    && (endereco.Scheme == Uri.UriSchemeHttp || endereco.Scheme == Uri.UriSchemeHttps);
+
+                <tr>
+                    <td>
+                        <strong>@conta.Name</strong>
+                        @if (!string.IsNullOrWhiteSpace(conta.AppService))
+                        {
+                            <div class="db-muted">@conta.AppService</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(conta.Description))
+                        {
+                            <div class="db-muted">@conta.Description</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(conta.Url))
+                        {
+                            <div class="db-muted">
+                                @if (urlSegura)
+                                {
+                                    <a href="@conta.Url" target="_blank" rel="noopener noreferrer">@conta.Url</a>
+                                }
+                                else
+                                {
+                                    @conta.Url
+                                }
+                            </div>
+                        }
+                    </td>
+                    <td>@conta.Kind</td>
+                    <td><span class="db-badge db-badge--@conta.BillingCycle.ToBadge()">@conta.BillingCycle.ToLabel()</span></td>
+                    <td class="db-num">@Fmt.Money(conta.Price)</td>
+                    <td>
+                        @if (!string.IsNullOrWhiteSpace(conta.LoginEmail))
+                        {
+                            <div>@conta.LoginEmail</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(conta.LoginUser))
+                        {
+                            <div class="db-muted">@conta.LoginUser</div>
+                        }
+                        @if (string.IsNullOrWhiteSpace(conta.LoginEmail) && string.IsNullOrWhiteSpace(conta.LoginUser))
+                        {
+                            <span class="db-muted">—</span>
+                        }
+                    </td>
+                    <td>
+                        @if (string.IsNullOrEmpty(conta.ProtectedPassword))
+                        {
+                            <span class="db-muted">—</span>
+                        }
+                        else if (Model.CriptografiaConfigurada)
+                        {
+                            @* Abre a senha em texto puro numa aba nova, sem cache. *@
+                            <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="ContaSenha"
+                               asp-route-id="@conta.Id" target="_blank" rel="noopener">Mostrar</a>
+                        }
+                        else
+                        {
+                            <span class="db-badge db-badge--amber" title="A chave de criptografia não está configurada neste servidor">Guardada</span>
+                        }
+                    </td>
+                    <td>
+                        <span class="db-badge db-badge--@(conta.IsActive ? "green" : "gray")">
+                            @(conta.IsActive ? "Ativa" : "Inativa")
+                        </span>
+                    </td>
+                    <td>
+                        <div class="db-inline">
+                            <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="ContaEditar" asp-route-id="@conta.Id">Editar</a>
+                            <form asp-controller="Dashboard" asp-action="ContaExcluir" method="post" class="db-inline"
+                                  onsubmit="return confirm('Excluir esta conta? A senha guardada também será apagada.');">
+                                <input type="hidden" name="id" value="@conta.Id" />
+                                <button type="submit" class="db-btn db-btn--danger db-btn--sm">Excluir</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Contas.Any())
+            {
+                <tr><td colspan="8" class="db-empty">Nenhuma conta cadastrada ainda.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

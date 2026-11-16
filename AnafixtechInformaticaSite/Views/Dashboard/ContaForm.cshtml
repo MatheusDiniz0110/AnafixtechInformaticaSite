@@ -1,0 +1,141 @@
+@* Formulário de conta da empresa: nova ou edição. Recebe um ContaFormViewModel. *@
+@model ContaFormViewModel
+@{
+    Layout = "_DashboardLayout";
+
+    // Id maior que zero = estamos editando uma conta já existente.
+    var editando = Model.Id > 0;
+    var acao = editando ? "ContaEditar" : "ContaNova";
+
+    ViewData["Title"] = editando ? "Editar conta" : "Nova conta";
+    ViewData["Tab"] = "Contas";
+}
+
+<div class="db-card-head">
+    <h2>@(editando ? "Editar conta" : "Nova conta")</h2>
+    <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="Contas">← Voltar</a>
+</div>
+
+<div class="db-card">
+    @* Envia os dados para ContaNova (cadastro) ou ContaEditar (edição). *@
+    <form asp-controller="Dashboard" asp-action="@acao" method="post" class="db-form">
+        <div asp-validation-summary="ModelOnly" class="db-alert db-alert--erro db-field--full"></div>
+
+        @* Na edição, o Id diz qual conta será atualizada. *@
+        @if (editando)
+        {
+            <input type="hidden" name="Id" value="@Model.Id" />
+        }
+
+        <div class="db-field db-field--full">
+            <label asp-for="Name"></label>
+            <input asp-for="Name" class="db-input" placeholder="Ex.: Instagram da empresa" />
+            <span asp-validation-for="Name" class="db-error"></span>
+        </div>
+
+        <div class="db-field">
+            <label asp-for="Kind"></label>
+            @* Aceita as sugestões e também qualquer tipo já gravado antes. *@
+            <input asp-for="Kind" class="db-input" list="tipos-conta" />
+            <datalist id="tipos-conta">
+                @foreach (var tipo in DashboardLists.TiposConta)
+                {
+                    <option value="@tipo"></option>
+                }
+            </datalist>
+            <span asp-validation-for="Kind" class="db-error"></span>
+        </div>
+
+        <div class="db-field">
+            <label asp-for="AppService"></label>
+            <input asp-for="AppService" class="db-input" placeholder="Ex.: Canva, Meta, Hostinger" />
+            <span asp-validation-for="AppService" class="db-error"></span>
+        </div>
+
+        <div class="db-field">
+            <label asp-for="Price"></label>
+            <input asp-for="Price" class="db-input" inputmode="decimal" placeholder="0,00 (vazio = sem custo)" />
+            <span asp-validation-for="Price" class="db-error"></span>
+        </div>
+
+        <div class="db-field">
+            <label asp-for="BillingCycle"></label>
+            <select asp-for="BillingCycle" class="db-input">
+                @foreach (var ciclo in Enum.GetValues<BillingCycle>())
+                {
+                    <option value="@ciclo">@ciclo.ToLabel()</option>
+                }
+            </select>
+            <span asp-validation-for="BillingCycle" class="db-error"></span>
+        </div>
+
+        <div class="db-field">
+            <label asp-for="LoginEmail"></label>
+            <input asp-for="LoginEmail" class="db-input" placeholder="contato@exemplo.com" />
+            <span asp-validation-for="LoginEmail" class="db-error"></span>
+        </div>
+
+        <div class="db-field">
+            <label asp-for="LoginUser"></label>
+            <input asp-for="LoginUser" class="db-input" placeholder="Usuário, quando não é e-mail" />
+            <span asp-validation-for="LoginUser" class="db-error"></span>
+        </div>
+
+        <div class="db-field db-field--full">
+            <label asp-for="Password"></label>
+            @* A senha digitada nunca volta para a tela; o controller limpa o campo antes de reexibir. *@
+            <input asp-for="Password" type="password" class="db-input" autocomplete="new-password" placeholder="Deixe em branco para não alterar" />
+            <span asp-validation-for="Password" class="db-error"></span>
+            @if (editando && Model.TemSenha)
+            {
+                <div class="db-muted">
+                    Já existe uma senha guardada (criptografada). Deixe em branco para manter ou digite uma nova para substituir.
+                </div>
+                <label class="db-check">
+                    <input asp-for="ApagarSenha" />
+                    <span>@Html.DisplayNameFor(m => m.ApagarSenha)</span>
+                </label>
+            }
+            else
+            {
+                <div class="db-muted">
+                    A senha é guardada criptografada no banco e nunca aparece nesta tela. Deixe em branco se a conta não tiver senha.
+                </div>
+            }
+        </div>
+
+        <div class="db-field db-field--full">
+            <label asp-for="Url"></label>
+            <input asp-for="Url" class="db-input" placeholder="https://..." />
+            <span asp-validation-for="Url" class="db-error"></span>
+        </div>
+
+        <div class="db-field db-field--full">
+            <label asp-for="Description"></label>
+            <textarea asp-for="Description" class="db-textarea" rows="3" placeholder="Para que serve esta conta / o que está incluído"></textarea>
+            <span asp-validation-for="Description" class="db-error"></span>
+        </div>
+
+        <div class="db-field db-field--full">
+            <label asp-for="Notes"></label>
+            <textarea asp-for="Notes" class="db-textarea" rows="3" placeholder="Plano contratado, data de renovação, forma de pagamento..."></textarea>
+            <span asp-validation-for="Notes" class="db-error"></span>
+        </div>
+
+        <div class="db-field db-field--full">
+            <label class="db-check">
+                <input asp-for="IsActive" />
+                <span>@Html.DisplayNameFor(m => m.IsActive)</span>
+            </label>
+            <div class="db-muted">Contas inativas continuam no painel, mas não entram no custo estimado.</div>
+        </div>
+
+        <div class="db-field db-field--full">
+            <button type="submit" class="db-btn db-btn--primary">@(editando ? "Salvar alterações" : "Cadastrar conta")</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

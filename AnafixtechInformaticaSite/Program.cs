@@ -34,6 +34,11 @@ if (int.TryParse(portaPublica, out var porta))
 // ---------------------------------------------------------------------------------------------
 builder.Services.AddControllersWithViews();
 
+// Criptografia das senhas guardadas na aba "Contas".
+// A chave é lida de "Contas:ChaveCriptografia" (variável de ambiente Contas__ChaveCriptografia).
+// Sem a chave, o cadastro de senha é recusado com uma mensagem clara — nunca gravamos texto puro.
+builder.Services.AddSingleton<AccountSecretProtector>();
+
 // Limite do tamanho de upload (foto do equipamento no formulário de solicitação).
 // O formulário aceita imagens de até 5 MB; o limite do servidor fica um pouco acima disso.
 builder.Services.Configure<FormOptions>(options =>

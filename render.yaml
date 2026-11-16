@@ -26,6 +26,10 @@ services:
       # O Render gera uma chave aleatória longa e guarda só no ambiente do serviço.
       - key: Jwt__SecretKey
         generateValue: true
+      # Chave que criptografa as senhas guardadas na aba "Contas".
+      # Se ela for trocada ou perdida, as senhas já gravadas ficam ilegíveis.
+      - key: Contas__ChaveCriptografia
+        generateValue: true
       # Conta admin criada no primeiro startup. A senha NÃO fica no repositório: adicione
       # Admin__Password no painel do Render (Environment), com pelo menos 8 caracteres.
       - key: Admin__Email

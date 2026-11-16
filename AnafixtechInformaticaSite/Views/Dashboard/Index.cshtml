@@ -73,7 +73,31 @@
     </div>
 </div>
 
-@* ===== Linha 3: gráfico de barras por status e últimos pedidos ===== *@
+@* ===== Linha 3: resultado acumulado de todo o histórico ===== *@
+<div class="db-grid db-grid--4">
+    @* Soma de todas as entradas já registradas (não só do mês). *@
+    <a class="db-kpi" asp-controller="Dashboard" asp-action="Financeiro">
+        <div class="db-kpi-label">Faturamento total</div>
+        <div class="db-kpi-value db-pos">@Fmt.Money(Model.FaturamentoTotal)</div>
+        <div class="db-kpi-hint">todas as entradas já registradas</div>
+    </a>
+
+    @* Soma de todas as saídas já registradas. *@
+    <a class="db-kpi" asp-controller="Dashboard" asp-action="Financeiro">
+        <div class="db-kpi-label">Despesas totais</div>
+        <div class="db-kpi-value db-neg">@Fmt.Money(Model.DespesasTotais)</div>
+        <div class="db-kpi-hint">todas as saídas já registradas</div>
+    </a>
+
+    @* Faturamento menos despesas, desde o primeiro lançamento. *@
+    <a class="db-kpi" asp-controller="Dashboard" asp-action="Financeiro">
+        <div class="db-kpi-label">Saldo acumulado</div>
+        <div class="db-kpi-value @(Model.SaldoAcumulado < 0 ? "db-neg" : "")">@Fmt.Money(Model.SaldoAcumulado)</div>
+        <div class="db-kpi-hint">faturamento menos despesas</div>
+    </a>
+</div>
+
+@* ===== Linha 4: gráfico de barras por status e últimos pedidos ===== *@
 <div class="db-grid db-grid--2">
     @* Cartão: quantas OS existem em cada status (barras proporcionais). *@
     <div class="db-card">
@@ -121,7 +145,7 @@
     </div>
 </div>
 
-@* ===== Linha 4: agenda, estoque baixo e tickets ===== *@
+@* ===== Linha 5: agenda, estoque baixo e tickets ===== *@
 <div class="db-grid db-grid--2">
     @* Cartão: próximos compromissos. *@
     <div class="db-card">

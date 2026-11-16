@@ -27,6 +27,7 @@ namespace AnafixtechInformaticaSite.Data
         public DbSet<SupportTicket> SupportTickets { get; set; }             // tickets de suporte
         public DbSet<Notification> Notifications { get; set; }              // notificações do painel
         public DbSet<ServiceRequest> ServiceRequests { get; set; }          // solicitações públicas do site
+        public DbSet<CompanyAccount> CompanyAccounts { get; set; }          // contas e assinaturas da empresa
 
         // Regras gerais aplicadas a TODAS as propriedades de um tipo, em todas as tabelas.
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -56,6 +57,7 @@ namespace AnafixtechInformaticaSite.Data
             configurationBuilder.Properties<TicketStatus>().HaveConversion<string>();
             configurationBuilder.Properties<NotificationType>().HaveConversion<string>();
             configurationBuilder.Properties<RequestStatus>().HaveConversion<string>();
+            configurationBuilder.Properties<BillingCycle>().HaveConversion<string>();
         }
     }
 }

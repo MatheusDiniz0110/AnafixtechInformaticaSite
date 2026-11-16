@@ -106,6 +106,16 @@ namespace AnafixtechInformaticaSite.Models
         Info     // Informação geral
     }
 
+    // De quanto em quanto tempo uma conta da empresa é cobrada (aba "Contas").
+    public enum BillingCycle
+    {
+        Mensal,      // todo mês
+        Trimestral,  // a cada 3 meses
+        Semestral,   // a cada 6 meses
+        Anual,       // uma vez por ano
+        Unico        // pagamento único (sem renovação)
+    }
+
     // Nível do estoque de uma peça. NÃO é gravado no banco: é calculado a partir das quantidades.
     public enum StockLevel
     {
@@ -267,6 +277,26 @@ namespace AnafixtechInformaticaSite.Models
             TicketStatus.InProgress => "blue",
             TicketStatus.Resolved => "green",
             _ => "amber"
+        };
+
+        // Texto da frequência de cobrança de uma conta.
+        public static string ToLabel(this BillingCycle v) => v switch
+        {
+            BillingCycle.Trimestral => "Trimestral",
+            BillingCycle.Semestral => "Semestral",
+            BillingCycle.Anual => "Anual",
+            BillingCycle.Unico => "Pagamento único",
+            _ => "Mensal"
+        };
+
+        // Cor do selo da frequência de cobrança.
+        public static string ToBadge(this BillingCycle v) => v switch
+        {
+            BillingCycle.Trimestral => "purple",
+            BillingCycle.Semestral => "cyan",
+            BillingCycle.Anual => "amber",
+            BillingCycle.Unico => "gray",
+            _ => "blue"
         };
 
         // Texto do nível de estoque.

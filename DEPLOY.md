@@ -62,6 +62,7 @@ sozinhas:
 | `ConnectionStrings__DefaultConnection` | Internal Database URL do `anafixtech-db` |
 | `Database__MigrateOnStartup` | `true` |
 | `Jwt__SecretKey` | 32+ caracteres aleatórios (não troque depois) |
+| `Contas__ChaveCriptografia` | 16+ caracteres aleatórios (não troque depois) |
 | `Admin__Email` | `matheus.diniz.t@outlook.com` |
 | `Admin__Password` | senha do admin, mínimo 8 caracteres (só no painel) |
 
@@ -125,6 +126,7 @@ Variáveis de ambiente:
 | `Database__MigrateOnStartup` | `true` |
 | `ConnectionStrings__DefaultConnection` | Internal/External Database URL do Postgres |
 | `Jwt__SecretKey` | 32+ caracteres aleatórios |
+| `Contas__ChaveCriptografia` | 16+ caracteres aleatórios |
 | `Admin__Email` | `matheus.diniz.t@outlook.com` |
 | `Admin__Password` | senha escolhida, mínimo 8 caracteres |
 
@@ -150,6 +152,10 @@ conexão pela rede interna.
   e exclusões feitas pela dashboard são respeitadas em novos deploys.
 - **Trocar a `Jwt__SecretKey`** derruba todas as sessões ativas (os cookies antigos deixam de
   validar). É o comportamento esperado.
+- **Senhas das contas da empresa** (aba "Contas") são gravadas criptografadas com AES-GCM,
+  usando a chave `Contas__ChaveCriptografia`. Sem essa variável, o cadastro de senha é recusado
+  com uma mensagem de erro (nada é gravado em texto puro). Se a chave for trocada ou perdida,
+  as senhas já guardadas ficam ilegíveis: será preciso digitá-las novamente.
 - **Nunca commite** a connection string de produção nem a chave JWT. Use as variáveis do
   Render.
 

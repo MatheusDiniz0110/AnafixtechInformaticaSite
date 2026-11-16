@@ -18,6 +18,9 @@ namespace AnafixtechInformaticaSite.Models.ViewModels
         public decimal EntradasMes { get; set; }     // total que entrou no mês
         public decimal SaidasMes { get; set; }       // total que saiu no mês
         public decimal SaldoMes => EntradasMes - SaidasMes; // saldo do mês (calculado)
+        public decimal FaturamentoTotal { get; set; } // soma de TODAS as entradas já registradas
+        public decimal DespesasTotais { get; set; }   // soma de TODAS as saídas já registradas
+        public decimal SaldoAcumulado => FaturamentoTotal - DespesasTotais; // calculado
         public decimal AReceber { get; set; }        // valor ainda não recebido das OS abertas
         public int TicketsAbertos { get; set; }      // tickets pendentes ou em atendimento
         public List<ServiceOrder> UltimosPedidos { get; set; } = new();       // 6 OS mais recentes
@@ -327,5 +330,82 @@ namespace AnafixtechInformaticaSite.Models.ViewModels
     public class NotificacoesViewModel
     {
         public List<Notification> Notificacoes { get; set; } = new(); // lista exibida
+    }
+
+    // =====================================================================
+    // CONTAS DA EMPRESA (assinaturas, redes sociais, hospedagem...)
+    // =====================================================================
+    public class ContasViewModel
+    {
+        public List<CompanyAccount> Contas { get; set; } = new(); // contas da tabela
+        public string? Busca { get; set; }                        // texto da busca
+        public decimal TotalMensal { get; set; }                  // custo mensal estimado (só contas ativas)
+        public decimal TotalAnual { get; set; }                   // custo anual estimado (só contas ativas)
+        public bool CriptografiaConfigurada { get; set; }         // existe chave para abrir as senhas?
+
+        public int Ativas => Contas.Count(c => c.IsActive);       // contador exibido no topo
+        public int Inativas => Contas.Count(c => !c.IsActive);
+    }
+
+    // Formulário de conta da empresa (nova ou edição).
+    public class ContaFormViewModel
+    {
+        // 0 = nova conta; maior que zero = conta sendo editada.
+        public int Id { get; set; }
+
+        [Display(Name = "Nome da conta")]
+        [Required(ErrorMessage = "Informe o nome da conta."), StringLength(120)]
+        public string Name { get; set; } = string.Empty;
+
+        [Display(Name = "Tipo de gasto")]
+        [Required(ErrorMessage = "Informe o tipo de gasto."), StringLength(60)]
+        public string Kind { get; set; } = "Assinatura";
+
+        [Display(Name = "App ou serviço")]
+        [StringLength(120)]
+        public string? AppService { get; set; }
+
+        [Display(Name = "Descrição")]
+        [StringLength(500)]
+        public string? Description { get; set; }
+
+        [Display(Name = "Preço da assinatura")]
+        public string? Price { get; set; } // texto; convertido com MoneyParser (vazio = sem custo)
+
+        [Display(Name = "Cobrança")]
+        public BillingCycle BillingCycle { get; set; } = BillingCycle.Mensal;
+
+        [Display(Name = "E-mail de login")]
+        [EmailAddress(ErrorMessage = "E-mail inválido."), StringLength(160)]
+        public string? LoginEmail { get; set; }
+
+        [Display(Name = "Usuário de login")]
+        [StringLength(120)]
+        public string? LoginUser { get; set; }
+
+        // Senha digitada agora. NUNCA é devolvida para a tela nem gravada em texto puro:
+        // o controller cifra antes de salvar e limpa este campo antes de reexibir o formulário.
+        [Display(Name = "Senha")]
+        [StringLength(200, ErrorMessage = "A senha deve ter no máximo 200 caracteres.")]
+        public string? Password { get; set; }
+
+        [Display(Name = "Endereço do site ou app")]
+        [StringLength(250)]
+        public string? Url { get; set; }
+
+        [Display(Name = "Observações")]
+        [StringLength(500)]
+        public string? Notes { get; set; }
+
+        [Display(Name = "Conta ativa")]
+        public bool IsActive { get; set; } = true;
+
+        // Só aparece na edição: apaga a senha que está guardada.
+        [Display(Name = "Apagar a senha guardada")]
+        public bool ApagarSenha { get; set; }
+
+        // Apenas informativo para a tela: já existe senha guardada? (não vem do formulário)
+        [BindNever, ValidateNever]
+        public bool TemSenha { get; set; }
     }
 }

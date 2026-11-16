@@ -34,5 +34,13 @@ namespace AnafixtechInformaticaSite.Models
         {
             "Software", "Hardware", "Dados", "Consultoria"
         };
+
+        // Sugestões de "tipo de gasto" para as contas da empresa (aba "Contas").
+        // Também é só sugestão: o formulário aceita qualquer texto digitado.
+        public static readonly string[] TiposConta =
+        {
+            "Assinatura", "Rede social", "Software", "Hospedagem", "Domínio",
+            "E-mail", "Marketing", "Internet e telefone", "Outro"
+        };
     }
 }

@@ -36,11 +36,15 @@ namespace AnafixtechInformaticaSite.Controllers
         // Acesso à pasta wwwroot (para apagar a foto quando a solicitação é excluída).
         private readonly IWebHostEnvironment _ambiente;
 
-        // Construtor: o ASP.NET entrega o AppDbContext pronto; guardamos para usar nas actions.
-        public DashboardController(AppDbContext context, IWebHostEnvironment ambiente)
+        // Criptografia das senhas das contas da empresa (aba "Contas").
+        private readonly AccountSecretProtector _protetor;
+
+        // Construtor: o ASP.NET entrega o AppDbContext e o protetor prontos; guardamos para usar nas actions.
+        public DashboardController(AppDbContext context, IWebHostEnvironment ambiente, AccountSecretProtector protetor)
         {
             _context = context;
             _ambiente = ambiente;
+            _protetor = protetor;
         }
 
         // Roda ANTES de qualquer action deste controller.
@@ -85,6 +89,15 @@ namespace AnafixtechInformaticaSite.Controllers
             // Soma das SAÍDAS do mês.
             vm.SaidasMes = await _context.FinancialEntries
                 .Where(f => f.Tipo == EntryType.Saida && f.Data >= inicioDoMes)
+                .SumAsync(f => (decimal?)f.Valor) ?? 0m;
+
+            // Totais de TODO o histórico (não só do mês) para os três cartões acumulados.
+            vm.FaturamentoTotal = await _context.FinancialEntries
+                .Where(f => f.Tipo == EntryType.Entrada)
+                .SumAsync(f => (decimal?)f.Valor) ?? 0m;
+
+            vm.DespesasTotais = await _context.FinancialEntries
+                .Where(f => f.Tipo == EntryType.Saida)
                 .SumAsync(f => (decimal?)f.Valor) ?? 0m;
 
             // "A receber": OS não canceladas e ainda não pagas por completo.
@@ -661,6 +674,200 @@ namespace AnafixtechInformaticaSite.Controllers
 
             Mensagem(true, "Lançamento excluído.");
             return RedirectToAction(nameof(Financeiro));
+        }
+
+        // =========================================================================================
+        // ABA: CONTAS (assinaturas e contas da empresa)
+        // =========================================================================================
+
+        // Lista as contas, com busca por nome, tipo, app, descrição ou e-mail de login.
+        // →  /Dashboard/Contas?busca=instagram
+        public async Task<IActionResult> Contas(string? busca)
+        {
+            var consulta = _context.CompanyAccounts.AsNoTracking().AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(busca))
+            {
+                var termo = busca.Trim();
+                consulta = consulta.Where(c => c.Name.Contains(termo)
+                                            || c.Kind.Contains(termo)
+                                            || (c.AppService != null && c.AppService.Contains(termo))
+                                            || (c.Description != null && c.Description.Contains(termo))
+                                            || (c.LoginEmail != null && c.LoginEmail.Contains(termo)));
+            }
+
+            // Contas ativas primeiro; dentro de cada grupo, em ordem alfabética.
+            var contas = await consulta
+                .OrderByDescending(c => c.IsActive)
+                .ThenBy(c => c.Name)
+                .ToListAsync();
+
+            // O custo estimado considera só as contas ativas e normaliza cada ciclo para mês.
+            var ativas = contas.Where(c => c.IsActive).ToList();
+
+            var vm = new ContasViewModel
+            {
+                Busca = busca,
+                Contas = contas,
+                TotalMensal = ativas.Sum(CustoMensalConta),
+                CriptografiaConfigurada = _protetor.EstaConfigurado
+            };
+            vm.TotalAnual = vm.TotalMensal * 12m; // estimativa: 12 vezes o custo mensal
+
+            return View(vm);
+        }
+
+        // Formulário de nova conta.  →  GET /Dashboard/ContaNova
+        [HttpGet]
+        public IActionResult ContaNova()
+        {
+            return View("ContaForm", new ContaFormViewModel());
+        }
+
+        // Grava a nova conta.  →  POST /Dashboard/ContaNova
+        [HttpPost]
+        public async Task<IActionResult> ContaNova(ContaFormViewModel vm)
+        {
+            if (!TentarLerPrecoConta(vm.Price, out var preco)
+                || !TentarProtegerSenhaConta(vm, out var senhaProtegida)
+                || !ModelState.IsValid)
+            {
+                vm.Password = null; // nunca devolve a senha digitada para o HTML da página
+                return View("ContaForm", vm);
+            }
+
+            var agora = Clock.Now;
+
+            _context.CompanyAccounts.Add(new CompanyAccount
+            {
+                Name = vm.Name.Trim(),
+                Kind = vm.Kind.Trim(),
+                AppService = LimparTexto(vm.AppService),
+                Description = LimparTexto(vm.Description),
+                Price = preco,
+                BillingCycle = vm.BillingCycle,
+                LoginEmail = LimparTexto(vm.LoginEmail),
+                LoginUser = LimparTexto(vm.LoginUser),
+                ProtectedPassword = senhaProtegida, // já cifrada; nunca texto puro
+                Url = LimparTexto(vm.Url),
+                Notes = LimparTexto(vm.Notes),
+                IsActive = vm.IsActive,
+                CreatedAt = agora,
+                UpdatedAt = agora
+            });
+            await _context.SaveChangesAsync();
+
+            Mensagem(true, $"Conta “{vm.Name.Trim()}” cadastrada.");
+            return RedirectToAction(nameof(Contas));
+        }
+
+        // Formulário de edição de uma conta.  →  GET /Dashboard/ContaEditar/5
+        [HttpGet]
+        public async Task<IActionResult> ContaEditar(int id)
+        {
+            var conta = await _context.CompanyAccounts.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
+            if (conta == null) return NotFound();
+
+            var vm = new ContaFormViewModel
+            {
+                Id = conta.Id,
+                Name = conta.Name,
+                Kind = conta.Kind,
+                AppService = conta.AppService,
+                Description = conta.Description,
+                // Formato com ponto decimal para o campo aceitar direto (o MoneyParser entende os dois).
+                Price = conta.Price?.ToString("0.00", CultureInfo.InvariantCulture),
+                BillingCycle = conta.BillingCycle,
+                LoginEmail = conta.LoginEmail,
+                LoginUser = conta.LoginUser,
+                Url = conta.Url,
+                Notes = conta.Notes,
+                IsActive = conta.IsActive,
+                TemSenha = !string.IsNullOrEmpty(conta.ProtectedPassword) // só o aviso, nunca a senha
+            };
+            return View("ContaForm", vm);
+        }
+
+        // Grava a edição da conta.  →  POST /Dashboard/ContaEditar
+        [HttpPost]
+        public async Task<IActionResult> ContaEditar(ContaFormViewModel vm)
+        {
+            var conta = await _context.CompanyAccounts.FirstOrDefaultAsync(c => c.Id == vm.Id);
+            if (conta == null) return NotFound();
+
+            // O aviso "já existe senha" continua correto mesmo se o formulário voltar com erro.
+            vm.TemSenha = !string.IsNullOrEmpty(conta.ProtectedPassword);
+
+            if (!TentarLerPrecoConta(vm.Price, out var preco)
+                || !TentarProtegerSenhaConta(vm, out var senhaProtegida)
+                || !ModelState.IsValid)
+            {
+                vm.Password = null; // nunca devolve a senha digitada para o HTML da página
+                return View("ContaForm", vm);
+            }
+
+            conta.Name = vm.Name.Trim();
+            conta.Kind = vm.Kind.Trim();
+            conta.AppService = LimparTexto(vm.AppService);
+            conta.Description = LimparTexto(vm.Description);
+            conta.Price = preco;
+            conta.BillingCycle = vm.BillingCycle;
+            conta.LoginEmail = LimparTexto(vm.LoginEmail);
+            conta.LoginUser = LimparTexto(vm.LoginUser);
+            conta.Url = LimparTexto(vm.Url);
+            conta.Notes = LimparTexto(vm.Notes);
+            conta.IsActive = vm.IsActive;
+
+            // Senha: digitar uma nova substitui a antiga; senão a caixinha "apagar" limpa;
+            // senão a senha que já estava guardada continua intacta.
+            if (!string.IsNullOrWhiteSpace(vm.Password))
+                conta.ProtectedPassword = senhaProtegida;
+            else if (vm.ApagarSenha)
+                conta.ProtectedPassword = null;
+
+            conta.UpdatedAt = Clock.Now;
+            await _context.SaveChangesAsync();
+
+            Mensagem(true, $"Conta “{conta.Name}” atualizada.");
+            return RedirectToAction(nameof(Contas));
+        }
+
+        // Exclui a conta (o registro inteiro, inclusive a senha cifrada).  →  POST /Dashboard/ContaExcluir
+        [HttpPost]
+        public async Task<IActionResult> ContaExcluir(int id)
+        {
+            var conta = await _context.CompanyAccounts.FirstOrDefaultAsync(c => c.Id == id);
+            if (conta == null) return NotFound();
+
+            _context.CompanyAccounts.Remove(conta);
+            await _context.SaveChangesAsync();
+
+            Mensagem(true, $"Conta “{conta.Name}” excluída.");
+            return RedirectToAction(nameof(Contas));
+        }
+
+        // Mostra a senha guardada em uma aba nova (texto puro, sem cache).  →  GET /Dashboard/ContaSenha/5
+        [HttpGet]
+        public async Task<IActionResult> ContaSenha(int id)
+        {
+            var conta = await _context.CompanyAccounts.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
+            if (conta == null) return NotFound();
+
+            // A senha não pode ficar guardada no cache do navegador nem em proxies.
+            Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
+            Response.Headers.Pragma = "no-cache";
+
+            if (string.IsNullOrEmpty(conta.ProtectedPassword))
+                return Content("Esta conta não tem senha guardada.", "text/plain; charset=utf-8");
+
+            if (!_protetor.EstaConfigurado)
+                return Content("A chave de criptografia (Contas:ChaveCriptografia) não está configurada neste servidor.", "text/plain; charset=utf-8");
+
+            var senha = _protetor.Revelar(conta.ProtectedPassword);
+            if (senha == null)
+                return Content("Não foi possível abrir a senha guardada (chave diferente ou dado corrompido).", "text/plain; charset=utf-8");
+
+            return Content(senha, "text/plain; charset=utf-8");
         }
 
         // =========================================================================================
@@ -1514,6 +1721,61 @@ namespace AnafixtechInformaticaSite.Controllers
         private async Task CarregarServicosAsync(ServiceRequestEditViewModel vm)
         {
             vm.Servicos = await _context.Services.AsNoTracking().OrderBy(s => s.Title).ToListAsync();
+        }
+
+        // Lê o preço da conta: em branco = conta sem custo; inválido = erro de validação.
+        private bool TentarLerPrecoConta(string? texto, out decimal? preco)
+        {
+            preco = null;
+            if (string.IsNullOrWhiteSpace(texto)) return true;
+
+            if (!MoneyParser.TryParse(texto, out var convertido))
+            {
+                ModelState.AddModelError("Price", "Preço inválido. Use o formato 120,50 (ou deixe em branco).");
+                return false;
+            }
+
+            preco = convertido;
+            return true;
+        }
+
+        // Cifra a senha digitada. Sem chave configurada, recusa (nunca grava texto puro).
+        private bool TentarProtegerSenhaConta(ContaFormViewModel vm, out string? protegida)
+        {
+            protegida = null;
+            if (string.IsNullOrWhiteSpace(vm.Password)) return true; // deixou em branco: nada a fazer
+
+            if (!_protetor.EstaConfigurado)
+            {
+                ModelState.AddModelError("Password",
+                    "Não é possível guardar a senha: a chave de criptografia não está configurada no servidor.");
+                return false;
+            }
+
+            protegida = _protetor.Proteger(vm.Password);
+            return true;
+        }
+
+        // Converte o preço de uma conta em custo mensal, para somar ciclos diferentes.
+        // Pagamento único não é gasto recorrente, então não entra na conta.
+        private static decimal CustoMensalConta(CompanyAccount conta)
+        {
+            if (conta.Price is not decimal preco) return 0m;
+
+            return conta.BillingCycle switch
+            {
+                BillingCycle.Trimestral => preco / 3m,
+                BillingCycle.Semestral => preco / 6m,
+                BillingCycle.Anual => preco / 12m,
+                BillingCycle.Unico => 0m,
+                _ => preco // Mensal
+            };
+        }
+
+        // Texto opcional: espaços nas pontas fora e vazio vira nulo (coluna opcional no banco).
+        private static string? LimparTexto(string? texto)
+        {
+            return string.IsNullOrWhiteSpace(texto) ? null : texto.Trim();
         }
 
         // Cria uma notificação no sino. Não grava sozinha: quem chama decide quando usar SaveChangesAsync.
