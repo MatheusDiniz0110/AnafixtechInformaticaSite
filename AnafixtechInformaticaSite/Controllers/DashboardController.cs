@@ -455,8 +455,10 @@ namespace AnafixtechInformaticaSite.Controllers
         public async Task<IActionResult> Financeiro(DateOnly? de, DateOnly? ate, EntryType? tipo, string? socio)
         {
             var hoje = Clock.Today;
-            var inicio = de ?? new DateOnly(hoje.Year, hoje.Month, 1); // padrão: do dia 1º do mês...
-            var fim = ate ?? hoje;                                      // ...até hoje
+            // Padrão: de 01/01/2024 até hoje. Assim a tela já abre mostrando TODO o histórico,
+            // e os lançamentos de meses anteriores não parecem ter "sumido" por causa do filtro.
+            var inicio = de ?? new DateOnly(2024, 1, 1);
+            var fim = ate ?? hoje;
             if (fim < inicio) (inicio, fim) = (fim, inicio);            // se vieram trocadas, inverte
 
             // Todos os lançamentos do período (qualquer sócio).
