@@ -19,6 +19,30 @@
     </div>
 </div>
 
+@* ===== Banner "Aguardando OK": sugestões pendentes NÃO somam nos totais abaixo ===== *@
+@if (Model.SugestoesPendentes.Any())
+{
+    <div class="db-card db-mb">
+        <div class="db-card-head">
+            <h2>Aguardando OK <span class="db-badge db-badge--amber">@Model.SugestoesPendentes.Count</span></h2>
+            <span class="db-muted">@Fmt.Money(Model.SugestoesPendentes.Sum(s => s.Valor)) em sugestões (fora dos totais)</span>
+        </div>
+        <ul class="db-list">
+            @foreach (var s in Model.SugestoesPendentes)
+            {
+                <li>
+                    <span>
+                        <a asp-controller="Dashboard" asp-action="PedidoDetalhes" asp-route-id="@s.ServiceOrderId">@(s.ServiceOrder?.Codigo ?? $"OS-{s.ServiceOrderId:D5}")</a>
+                        <span class="db-muted">· @Fmt.Date(s.DataSugerida) · @s.FormaPagamentoSugerida.ToLabel() · @s.MotivoCriacao</span>
+                    </span>
+                    <strong class="db-pos">@Fmt.Money(s.Valor)</strong>
+                </li>
+            }
+        </ul>
+        <div class="db-muted db-mt-xs">Abra a OS para dar o OK, editar ou ignorar. Enquanto isso, nenhum lançamento foi gravado.</div>
+    </div>
+}
+
 @* Filtros: período, tipo e sócio (método GET: ficam no endereço). *@
 <form method="get" asp-controller="Dashboard" asp-action="Financeiro" class="db-form db-mb">
     <div class="db-field"><label>De</label><input type="date" name="de" value="@deIso" class="db-input" /></div>

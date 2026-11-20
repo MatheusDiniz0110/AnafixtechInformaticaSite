@@ -22,6 +22,8 @@ namespace AnafixtechInformaticaSite.Models.ViewModels
         public decimal DespesasTotais { get; set; }   // soma de TODAS as saídas já registradas
         public decimal SaldoAcumulado => FaturamentoTotal - DespesasTotais; // calculado
         public decimal AReceber { get; set; }        // valor ainda não recebido das OS abertas
+        public int SugestoesPendentes { get; set; }          // quantidade de recebimentos aguardando OK
+        public decimal TotalSugestoesPendentes { get; set; } // soma das sugestões (NÃO entra no financeiro)
         public int TicketsAbertos { get; set; }      // tickets pendentes ou em atendimento
         public List<ServiceOrder> UltimosPedidos { get; set; } = new();       // 6 OS mais recentes
         public List<Agendamento> ProximosAgendamentos { get; set; } = new();  // próximos compromissos
@@ -90,6 +92,8 @@ namespace AnafixtechInformaticaSite.Models.ViewModels
     {
         public ServiceOrder Pedido { get; set; } = new();                // a OS (com histórico e serviço carregados)
         public List<FinancialEntry> Lancamentos { get; set; } = new();   // pagamentos ligados à OS
+        public FinancialSuggestion? Sugestao { get; set; }               // sugestão aguardando o OK (no máximo uma)
+        public List<FinancialSuggestion> HistoricoSugestoes { get; set; } = new(); // decisões já tomadas
         public List<StockItem> Pecas { get; set; } = new();              // peças para o campo "peça usada"
     }
 
@@ -122,6 +126,7 @@ namespace AnafixtechInformaticaSite.Models.ViewModels
         public List<CategoriaTotal> PorCategoria { get; set; } = new(); // resumo por categoria
         public List<SocioTotal> PorSocio { get; set; } = new();         // resumo por sócio
         public List<FinancialEntry> Lancamentos { get; set; } = new();  // linhas da tabela
+        public List<FinancialSuggestion> SugestoesPendentes { get; set; } = new(); // banner; fora dos totais
         public bool Cortado { get; set; }           // true = havia mais linhas do que o limite exibido
     }
 

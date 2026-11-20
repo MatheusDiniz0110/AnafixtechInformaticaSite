@@ -39,12 +39,17 @@ namespace AnafixtechInformaticaSite.Controllers
         // Criptografia das senhas das contas da empresa (aba "Contas").
         private readonly AccountSecretProtector _protetor;
 
+        // Regras financeiras das OS: recálculo, sugestões e aprovação em um só lugar.
+        private readonly OsFinancialService _financeiro;
+
         // Construtor: o ASP.NET entrega o AppDbContext e o protetor prontos; guardamos para usar nas actions.
-        public DashboardController(AppDbContext context, IWebHostEnvironment ambiente, AccountSecretProtector protetor)
+        public DashboardController(AppDbContext context, IWebHostEnvironment ambiente,
+            AccountSecretProtector protetor, OsFinancialService financeiro)
         {
             _context = context;
             _ambiente = ambiente;
             _protetor = protetor;
+            _financeiro = financeiro;
         }
 
         // Roda ANTES de qualquer action deste controller.
@@ -63,6 +68,10 @@ namespace AnafixtechInformaticaSite.Controllers
         // =========================================================================================
         public async Task<IActionResult> Index()
         {
+            // O Render hiberna: se alguma OS ficou concluída enquanto o site dormia,
+            // esta reconciliação leve (idempotente) cria a sugestão que faltou.
+            await _financeiro.ReconciliarRecentesAsync();
+
             var hoje = Clock.Today;                                   // data de hoje (Brasília)
             var agora = Clock.Now;                                    // data e hora de agora
             var inicioDoMes = new DateOnly(hoje.Year, hoje.Month, 1); // dia 1º do mês atual
@@ -137,6 +146,15 @@ namespace AnafixtechInformaticaSite.Controllers
 
             vm.NotificacoesRecentes = await _context.Notifications.AsNoTracking()
                 .OrderByDescending(n => n.CreatedAt).Take(5).ToListAsync();           // últimas notificações
+
+            // Cartão "Aguardando OK": só contas Sugestões Pendentes. O dinheiro aqui
+            // ainda NÃO entrou no financeiro — nada destes valores soma nas entradas.
+            var pendentes = await _context.FinancialSuggestions.AsNoTracking()
+                .Where(s => s.Status == SuggestionStatus.Pendente)
+                .Select(s => s.Valor)
+                .ToListAsync();
+            vm.SugestoesPendentes = pendentes.Count;
+            vm.TotalSugestoesPendentes = Arredondar(pendentes.Sum());
 
             return View(vm); // entrega tudo para Views/Dashboard/Index.cshtml
         }
@@ -285,6 +303,13 @@ namespace AnafixtechInformaticaSite.Controllers
                 Lancamentos = await _context.FinancialEntries.AsNoTracking()
                     .Where(f => f.ServiceOrderId == id)
                     .OrderByDescending(f => f.Data).ToListAsync(),
+                // Sugestão pendente desta OS (no máximo uma, garantida pelo índice no banco).
+                Sugestao = await _context.FinancialSuggestions.AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.ServiceOrderId == id && s.Status == SuggestionStatus.Pendente),
+                // Histórico de decisões (OK/ignore/cancelamento) para rastrear quem aprovou.
+                HistoricoSugestoes = await _context.FinancialSuggestions.AsNoTracking()
+                    .Where(s => s.ServiceOrderId == id && s.Status != SuggestionStatus.Pendente)
+                    .OrderByDescending(s => s.Id).Take(20).ToListAsync(),
                 // Lista de peças para o campo "peça usada".
                 Pecas = await _context.StockItems.AsNoTracking().OrderBy(s => s.Name).ToListAsync()
             };
@@ -330,6 +355,10 @@ namespace AnafixtechInformaticaSite.Controllers
             });
 
             await _context.SaveChangesAsync();
+
+            // Gatilho R1/R4: concluir cria a sugestão; cancelar encerra a pendente.
+            await _financeiro.ReconciliarOS(id);
+
             Mensagem(true, $"Status atualizado para “{status.ToLabel()}”.");
             return RedirectToAction(nameof(PedidoDetalhes), new { id });
         }
@@ -359,12 +388,15 @@ namespace AnafixtechInformaticaSite.Controllers
             pedido.StockItemId = stockItemId;
             pedido.UpdatedAt = Clock.Now;
 
-            // Se o valor combinado mudou, a situação do pagamento pode mudar também.
-            var devido = pedido.FinalPrice ?? pedido.EstimatedPrice;
-            if (devido.HasValue)
-                pedido.PaymentStatus = CalcularPagamento(devido.Value, pedido.ValorRecebido);
+            // O valor combinado mudou: o status do pagamento e a sugestão são
+            // recalculados pelo serviço central (nada de conta feita à mão aqui).
+            await _financeiro.RecalcularPagamentoDaOS(id, salvar: false);
 
             await _context.SaveChangesAsync();
+
+            // Gatilho R2: preço alterado com sugestão pendente atualiza o valor dela.
+            await _financeiro.ReconciliarOS(id);
+
             Mensagem(true, "Dados da OS salvos.");
             return RedirectToAction(nameof(PedidoDetalhes), new { id });
         }
@@ -391,23 +423,18 @@ namespace AnafixtechInformaticaSite.Controllers
                 return RedirectToAction(nameof(PedidoDetalhes), new { id });
             }
 
-            var dia = data ?? Clock.Today;                       // usa hoje se não informou a data
-            var recebido = pedido.ValorRecebido + valorPago;     // total recebido depois deste pagamento
+            var dia = data ?? Clock.Today; // usa hoje se não informou a data
+            valorPago = Arredondar(valorPago); // duas casas, sempre
 
             // Se a OS não tinha preço definido, o pagamento passa a ser o valor final.
+            // (Só preenche o preço faltante; o total recebido é calculado no serviço.)
             if (pedido.FinalPrice == null && pedido.EstimatedPrice == null)
-                pedido.FinalPrice = recebido;
+                pedido.FinalPrice = Arredondar(pedido.ValorRecebido + valorPago);
 
-            var devido = pedido.FinalPrice ?? pedido.EstimatedPrice ?? recebido; // quanto a OS vale
-
-            // Atualiza os campos de pagamento da OS.
-            pedido.ValorRecebido = recebido;
-            pedido.PaymentMethod = forma;
-            pedido.PaymentDate = dia;
-            pedido.PaymentStatus = CalcularPagamento(devido, recebido);
             pedido.UpdatedAt = Clock.Now;
 
-            // Cria o lançamento de ENTRADA ligado à OS.
+            // Cria o lançamento de ENTRADA ligado à OS. O pagamento manual continua
+            // funcionando como antes, mas quem agora atualiza a OS é o serviço central.
             _context.FinancialEntries.Add(new FinancialEntry
             {
                 Data = dia,
@@ -430,9 +457,87 @@ namespace AnafixtechInformaticaSite.Controllers
             Notificar(NotificationType.Payment, "Pagamento recebido",
                       $"{pedido.Codigo}: {Fmt.Money(valorPago)} via {forma.ToLabel()}", pedido.Id, "order");
 
-            await _context.SaveChangesAsync(); // grava OS + lançamento + notificação de uma vez
+            await _context.SaveChangesAsync(); // grava o lançamento e a notificação
+
+            // Agora a entrada existe no banco: recalcula OS e sugestão a partir dela.
+            // A conta deixou de ser feita à mão em qualquer action.
+            await _financeiro.RecalcularPagamentoDaOS(id);
+
+            // Um recebimento muda o saldo: atualiza a sugestão pendente, se houver.
+            await _financeiro.ReconciliarOS(id);
+
             Mensagem(true, $"Pagamento de {Fmt.Money(valorPago)} registrado na OS e no financeiro.");
             return RedirectToAction(nameof(PedidoDetalhes), new { id });
+        }
+
+        // =====================================================================================
+        // SUGESTÕES DE RECEBIMENTO — só aqui um lançamento de OS é gravado no financeiro.
+        // =====================================================================================
+
+        // OK com os valores sugeridos. O token vem escondido no formulário e protege
+        // contra duplo clique e contra duas abas aprovando a mesma sugestão.
+        [HttpPost]
+        public async Task<IActionResult> SugestaoAprovar(int id, Guid token)
+        {
+            var resultado = await _financeiro.AprovarSugestao(id, token, NomeDoUsuario());
+            return FinalizarDecisao(resultado);
+        }
+
+        // "Editar e aprovar": o usuário pode ajustar valor, data, forma, sócio e observação.
+        // Tudo é validado no servidor antes de virar lançamento.
+        [HttpPost]
+        public async Task<IActionResult> SugestaoAprovarEditada(int id, Guid token, string valor,
+            PaymentMethod forma, DateOnly? data, string socio, string? observacao)
+        {
+            if (!MoneyParser.TryParse(valor, out var valorAjustado) || valorAjustado <= 0)
+            {
+                Mensagem(false, "Informe um valor válido maior que zero (ex.: 120,50).");
+                return RedirectToAction(nameof(PedidoDetalhes), new { id = IdDaSugestao(id) });
+            }
+
+            if (!DashboardLists.Socios.Contains(socio))
+            {
+                Mensagem(false, "Escolha um sócio válido.");
+                return RedirectToAction(nameof(PedidoDetalhes), new { id = IdDaSugestao(id) });
+            }
+
+            var ajustes = new AjustesAprovacao
+            {
+                Valor = valorAjustado,
+                Data = data ?? Clock.Today,
+                FormaPagamento = forma,
+                Socio = socio,
+                Observacao = observacao
+            };
+
+            var resultado = await _financeiro.AprovarSugestao(id, token, NomeDoUsuario(), ajustes);
+            return FinalizarDecisao(resultado);
+        }
+
+        // "Ignorar": pede um motivo curto. Nada é gravado no financeiro.
+        [HttpPost]
+        public async Task<IActionResult> SugestaoRejeitar(int id, Guid token, string motivo)
+        {
+            var resultado = await _financeiro.RejeitarSugestao(id, token, motivo, NomeDoUsuario());
+            return FinalizarDecisao(resultado);
+        }
+
+        // Traduz o resultado do serviço em mensagem + redirecionamento.
+        private IActionResult FinalizarDecisao(ResultadoSugestao resultado)
+        {
+            Mensagem(resultado.Sucesso && !resultado.Conflito, resultado.Mensagem);
+            if (resultado.OsId > 0)
+                return RedirectToAction(nameof(PedidoDetalhes), new { id = resultado.OsId });
+            return RedirectToAction(nameof(Pedidos));
+        }
+
+        // Descobre a OS de uma sugestão para conseguir voltar à tela em caso de erro de formulário.
+        private int IdDaSugestao(int sugestaoId)
+        {
+            return _context.FinancialSuggestions.AsNoTracking()
+                .Where(s => s.Id == sugestaoId)
+                .Select(s => s.ServiceOrderId)
+                .FirstOrDefault();
         }
 
         // Exclui uma OS (somente se ela ainda não tiver pagamentos).  →  POST /Dashboard/PedidoExcluir
@@ -467,7 +572,18 @@ namespace AnafixtechInformaticaSite.Controllers
         // Resumo e lista de lançamentos do período.  →  /Dashboard/Financeiro?de=2026-10-01&ate=2026-10-31
         public async Task<IActionResult> Financeiro(DateOnly? de, DateOnly? ate, EntryType? tipo, string? socio)
         {
+            // Mesma reconciliação leve da Visão geral (segura para rodar toda vez que abre).
+            await _financeiro.ReconciliarRecentesAsync();
+
             var hoje = Clock.Today;
+
+            // Banner "Aguardando OK": sugestões não entram em nenhum total desta tela.
+            var sugestoes = await _context.FinancialSuggestions.AsNoTracking()
+                .Include(s => s.ServiceOrder)
+                .Where(s => s.Status == SuggestionStatus.Pendente)
+                .OrderBy(s => s.DataSugerida).ThenBy(s => s.Id)
+                .Take(LimiteLinhas)
+                .ToListAsync();
             // Padrão: de 01/01/2024 até hoje. Assim a tela já abre mostrando TODO o histórico,
             // e os lançamentos de meses anteriores não parecem ter "sumido" por causa do filtro.
             var inicio = de ?? new DateOnly(2024, 1, 1);
@@ -519,6 +635,7 @@ namespace AnafixtechInformaticaSite.Controllers
 
             vm.Cortado = lista.Count > LimiteLinhas;            // true se passou do limite
             vm.Lancamentos = lista.Take(LimiteLinhas).ToList(); // mostra só até o limite
+            vm.SugestoesPendentes = sugestoes;                  // banner (fora dos totais)
             return View(vm);
         }
 
@@ -613,8 +730,6 @@ namespace AnafixtechInformaticaSite.Controllers
                 return View("LancamentoNovo", vm);
             }
 
-            var valorAnterior = lancamento.Valor;
-
             // Aplica os campos editados. Origem, vínculos e data de criação são preservados.
             lancamento.Data = vm.Data!.Value;
             lancamento.Tipo = vm.Tipo;
@@ -627,22 +742,18 @@ namespace AnafixtechInformaticaSite.Controllers
             lancamento.Observacoes = string.IsNullOrWhiteSpace(vm.Observacoes) ? null : vm.Observacoes.Trim();
             lancamento.Socio = vm.Socio;
 
-            // Se era pagamento de OS, ajusta o total recebido da OS pela diferença do valor,
-            // mantendo o status de pagamento coerente (mesmo padrão da exclusão).
-            if (lancamento.Origem == EntryOrigin.OS && lancamento.ServiceOrderId.HasValue)
-            {
-                var pedido = await _context.ServiceOrders.FirstOrDefaultAsync(o => o.Id == lancamento.ServiceOrderId.Value);
-                if (pedido != null)
-                {
-                    pedido.ValorRecebido = Math.Max(0m, pedido.ValorRecebido - valorAnterior + valor);
-                    var devido = pedido.FinalPrice ?? pedido.EstimatedPrice;
-                    if (devido.HasValue)
-                        pedido.PaymentStatus = CalcularPagamento(devido.Value, pedido.ValorRecebido);
-                    pedido.UpdatedAt = Clock.Now;
-                }
-            }
+            var osId = lancamento.ServiceOrderId; // guarda antes de sair do escopo
+            await _context.SaveChangesAsync();    // grava o novo valor do lançamento
 
-            await _context.SaveChangesAsync();
+            // A OS é recalculada a partir da soma real das entradas — sem "valor anterior"
+            // e sem conta de diferença espalhada pela action.
+            if (osId.HasValue)
+            {
+                var pedido = await _context.ServiceOrders.FirstOrDefaultAsync(o => o.Id == osId.Value);
+                if (pedido != null) pedido.UpdatedAt = Clock.Now;
+                await _financeiro.RecalcularPagamentoDaOS(osId.Value);
+                await _financeiro.ReconciliarOS(osId.Value);
+            }
 
             Mensagem(true, "Lançamento atualizado.");
             return RedirectToAction(nameof(Financeiro));
@@ -655,22 +766,18 @@ namespace AnafixtechInformaticaSite.Controllers
             var lancamento = await _context.FinancialEntries.FirstOrDefaultAsync(f => f.Id == id);
             if (lancamento == null) return NotFound();
 
-            // Se o lançamento era um pagamento de OS, devolve esse valor à OS para os dois lados continuarem batendo.
-            if (lancamento.Origem == EntryOrigin.OS && lancamento.ServiceOrderId.HasValue)
-            {
-                var pedido = await _context.ServiceOrders.FirstOrDefaultAsync(o => o.Id == lancamento.ServiceOrderId.Value);
-                if (pedido != null)
-                {
-                    pedido.ValorRecebido = Math.Max(0m, pedido.ValorRecebido - lancamento.Valor); // nunca fica negativo
-                    var devido = pedido.FinalPrice ?? pedido.EstimatedPrice;
-                    if (devido.HasValue)
-                        pedido.PaymentStatus = CalcularPagamento(devido.Value, pedido.ValorRecebido);
-                    pedido.UpdatedAt = Clock.Now;
-                }
-            }
+            var osId = lancamento.ServiceOrderId; // guarda antes de remover
 
             _context.FinancialEntries.Remove(lancamento);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(); // a entrada sai do banco antes do recálculo
+
+            if (osId.HasValue)
+            {
+                var pedido = await _context.ServiceOrders.FirstOrDefaultAsync(o => o.Id == osId.Value);
+                if (pedido != null) pedido.UpdatedAt = Clock.Now;
+                await _financeiro.RecalcularPagamentoDaOS(osId.Value);
+                await _financeiro.ReconciliarOS(osId.Value);
+            }
 
             Mensagem(true, "Lançamento excluído.");
             return RedirectToAction(nameof(Financeiro));
@@ -1632,6 +1739,10 @@ namespace AnafixtechInformaticaSite.Controllers
             _context.ServiceOrders.Add(pedido);
             await _context.SaveChangesAsync();
 
+            // A OS nasce "Novo", então hoje não gera sugestão. O gatilho fica aqui
+            // para o caso de a solicitação já chegar com preço e status final no futuro.
+            await _financeiro.ReconciliarOS(pedido.Id);
+
             Mensagem(true, $"Solicitação {solicitacao.Protocolo} convertida na OS {pedido.Codigo}.");
             return RedirectToAction(nameof(PedidoDetalhes), new { id = pedido.Id });
         }
@@ -1811,11 +1922,9 @@ namespace AnafixtechInformaticaSite.Controllers
             return User.Identity?.Name ?? "Admin";
         }
 
-        // Situação do pagamento: "Pago" só quando já se recebeu tudo (ou mais); senão "Pendente".
-        private static OrderPaymentStatus CalcularPagamento(decimal devido, decimal recebido)
-        {
-            return recebido > 0m && recebido >= devido ? OrderPaymentStatus.Paid : OrderPaymentStatus.Pending;
-        }
+        // Dinheiro sempre com duas casas, arredondando na metade do centavo.
+        // A regra de situação do pagamento agora vive no OsFinancialService.
+        private static decimal Arredondar(decimal valor) => Math.Round(valor, 2, MidpointRounding.AwayFromZero);
 
         // Lê um valor em dinheiro OPCIONAL: vazio vira null (válido); texto inválido devolve false.
         private static bool TentarLerValorOpcional(string? texto, out decimal? valor)

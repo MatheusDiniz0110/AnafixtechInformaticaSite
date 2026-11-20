@@ -55,6 +55,16 @@ namespace AnafixtechInformaticaSite.Models
         Estoque  // Gerado automaticamente por uma compra de peça
     }
 
+    // Situação de uma sugestão de recebimento criada a partir de uma OS.
+    // Só "Pendente" aparece para aprovação; as demais são decisões já tomadas.
+    public enum SuggestionStatus
+    {
+        Pendente,  // Esperando o clique de OK do administrador
+        Aprovada,  // OK dado: já virou um FinancialEntry de Entrada
+        Rejeitada, // Administrador ignorou com um motivo
+        Cancelada  // OS foi cancelada antes da aprovação
+    }
+
     // Tipo de compromisso na agenda.
     public enum AgendamentoTipo
     {
@@ -98,12 +108,13 @@ namespace AnafixtechInformaticaSite.Models
     // Categoria de uma notificação do painel (campo "type" no Base44).
     public enum NotificationType
     {
-        OsNew,   // Nova OS
-        Payment, // Pagamento recebido
-        Stock,   // Estoque baixo
-        Ticket,  // Novo ticket
-        Urgent,  // Algo urgente
-        Info     // Informação geral
+        OsNew,      // Nova OS
+        Payment,    // Pagamento recebido
+        Stock,      // Estoque baixo
+        Ticket,     // Novo ticket
+        Urgent,     // Algo urgente
+        Suggestion, // Recebimento sugerido esperando o OK (Fase 1)
+        Info        // Informação geral
     }
 
     // De quanto em quanto tempo uma conta da empresa é cobrada (aba "Contas").
@@ -205,6 +216,25 @@ namespace AnafixtechInformaticaSite.Models
             EntryOrigin.OS => "OS",
             EntryOrigin.Estoque => "Estoque",
             _ => "Manual"
+        };
+
+        // Texto e cor do selo da situação de uma sugestão de recebimento.
+        public static string ToLabel(this SuggestionStatus v) => v switch
+        {
+            SuggestionStatus.Pendente => "Aguardando OK",
+            SuggestionStatus.Aprovada => "Aprovada",
+            SuggestionStatus.Rejeitada => "Ignorada",
+            SuggestionStatus.Cancelada => "Cancelada",
+            _ => v.ToString()
+        };
+
+        public static string ToBadge(this SuggestionStatus v) => v switch
+        {
+            SuggestionStatus.Pendente => "amber",
+            SuggestionStatus.Aprovada => "green",
+            SuggestionStatus.Rejeitada => "gray",
+            SuggestionStatus.Cancelada => "gray",
+            _ => "gray"
         };
 
         // Texto do tipo de agendamento.

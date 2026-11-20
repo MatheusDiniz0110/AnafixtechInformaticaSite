@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="AnafixtechInformaticaSite/AnafixtechInformaticaSite.csproj" />
+  <Project Path="AnafixtechInformaticaSite.Tests/AnafixtechInformaticaSite.Tests.csproj" />
 </Solution>

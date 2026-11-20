@@ -90,6 +90,10 @@ if (!builder.Environment.IsDevelopment() &&
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+// Regras financeiras das OS ficam num serviço só, para não ter conta repetida
+// em várias actions do DashboardController (ver Services/OsFinancialService.cs).
+builder.Services.AddScoped<OsFinancialService>();
+
 // ---------------------------------------------------------------------------------------------
 // 3) Autenticação JWT
 // A chave de assinatura também é segredo: user secrets / variável Jwt__SecretKey.

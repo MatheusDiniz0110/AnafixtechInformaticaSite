@@ -184,6 +184,101 @@
     }
 </div>
 
+@* ===== Recebimento sugerido: nada foi gravado no financeiro até o OK ===== *@
+@if (Model.Sugestao != null)
+{
+    var s = Model.Sugestao;
+    var socioValido = DashboardLists.Socios.Contains(s.SocioSugerido);
+    <div class="db-card db-mb">
+        <div class="db-card-head">
+            <h2>Recebimento sugerido <span class="db-badge db-badge--amber">Aguardando OK</span></h2>
+        </div>
+        <dl class="db-dl">
+            <dt>Valor</dt><dd><strong class="db-pos">@Fmt.Money(s.Valor)</strong></dd>
+            <dt>Data</dt><dd>@Fmt.Date(s.DataSugerida)</dd>
+            <dt>Forma de pagamento</dt><dd>@s.FormaPagamentoSugerida.ToLabel()</dd>
+            <dt>Sócio</dt><dd>@s.SocioSugerido</dd>
+            <dt>Categoria</dt><dd>@s.Categoria</dd>
+            <dt>Motivo</dt><dd>@s.MotivoCriacao</dd>
+        </dl>
+
+        <div class="db-inline db-mt-xs">
+            @* OK: aprova exatamente como sugerido. O token protege contra duplo clique/duas abas. *@
+            <form asp-controller="Dashboard" asp-action="SugestaoAprovar" method="post"
+                  onsubmit="const b=this.querySelector('button[type=submit]'); if (b) b.disabled=true;">
+                <input type="hidden" name="id" value="@s.Id" />
+                <input type="hidden" name="token" value="@s.Token" />
+                <button type="submit" class="db-btn db-btn--primary">OK</button>
+            </form>
+
+            @* Ajustes opcionais antes de aprovar (detalhe fechado para não poluir o celular). *@
+            <details>
+                <summary class="db-btn">Editar e aprovar</summary>
+                <form asp-controller="Dashboard" asp-action="SugestaoAprovarEditada" method="post" class="db-form db-mt-xs"
+                      onsubmit="const b=this.querySelector('button[type=submit]'); if (b) b.disabled=true;">
+                    <input type="hidden" name="id" value="@s.Id" />
+                    <input type="hidden" name="token" value="@s.Token" />
+                    <div class="db-field">
+                        <label>Valor</label>
+                        <input name="valor" class="db-input" inputmode="decimal" value="@s.Valor.ToString("0.00", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"))" required />
+                    </div>
+                    <div class="db-field">
+                        <label>Data</label>
+                        <input type="date" name="data" class="db-input" value="@s.DataSugerida.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="db-field">
+                        <label>Forma de pagamento</label>
+                        <select name="forma" class="db-select">
+                            @foreach (var forma in Enum.GetValues<PaymentMethod>())
+                            {
+                                <option value="@forma" selected="@(s.FormaPagamentoSugerida == forma)">@forma.ToLabel()</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="db-field">
+                        <label>Sócio</label>
+                        <select name="socio" class="db-select">
+                            @foreach (var socio in DashboardLists.Socios)
+                            {
+                                <option value="@socio" selected="@(s.SocioSugerido == socio)">@socio</option>
+                            }
+                            @if (!socioValido)
+                            {
+                                <option value="@s.SocioSugerido" selected>@s.SocioSugerido</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="db-field db-field--full">
+                        <label>Observação</label>
+                        <input name="observacao" class="db-input" maxlength="500" />
+                    </div>
+                    <div class="db-field db-field--full">
+                        <button type="submit" class="db-btn db-btn--primary">Aprovar com ajustes</button>
+                    </div>
+                </form>
+            </details>
+
+            @* Ignorar: nunca apaga a sugestão, só registra o motivo da decisão. *@
+            <details>
+                <summary class="db-btn">Ignorar</summary>
+                <form asp-controller="Dashboard" asp-action="SugestaoRejeitar" method="post" class="db-form db-mt-xs"
+                      onsubmit="const b=this.querySelector('button[type=submit]'); if (b) b.disabled=true;">
+                    <input type="hidden" name="id" value="@s.Id" />
+                    <input type="hidden" name="token" value="@s.Token" />
+                    <div class="db-field db-field--full">
+                        <label>Motivo (curto)</label>
+                        <input name="motivo" class="db-input" maxlength="500" required />
+                    </div>
+                    <div class="db-field db-field--full">
+                        <button type="submit" class="db-btn">Ignorar sugestão</button>
+                    </div>
+                </form>
+            </details>
+        </div>
+        <div class="db-muted db-mt-xs">Enquanto você não der o OK, este valor não aparece no financeiro.</div>
+    </div>
+}
+
 @* ===== Linha 4: histórico e lançamentos ===== *@
 <div class="db-grid db-grid--2">
     @* Cartão: histórico de status, do mais recente para o mais antigo. *@
@@ -219,8 +314,20 @@
             <ul class="db-list">
                 @foreach (var l in Model.Lancamentos)
                 {
+                    // Se veio de uma sugestão, mostramos quem deu o OK (rastreabilidade).
+                    var decisao = Model.HistoricoSugestoes.FirstOrDefault(x => x.FinancialEntryId == l.Id);
                     <li>
-                        <span>@Fmt.Date(l.Data) · @l.FormaPagamento.ToLabel()</span>
+                        <span>
+                            @Fmt.Date(l.Data) · @l.FormaPagamento.ToLabel()
+                            @if (decisao != null && !string.IsNullOrWhiteSpace(decisao.DecididoPor))
+                            {
+                                <span class="db-muted">· aprovado por @decisao.DecididoPor</span>
+                            }
+                            else if (l.Origem == EntryOrigin.Manual)
+                            {
+                                <span class="db-muted">· lançamento manual</span>
+                            }
+                        </span>
                         <strong class="db-pos">@Fmt.Money(l.Valor)</strong>
                     </li>
                 }

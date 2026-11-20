@@ -220,6 +220,92 @@ namespace AnafixtechInformaticaSite.Migrations
                     b.ToTable("FinancialEntries");
                 });
 
+            modelBuilder.Entity("AnafixtechInformaticaSite.Models.FinancialSuggestion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Categoria")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTime>("CriadaEm")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateOnly>("DataSugerida")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime?>("DecididaEm")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("DecididoPor")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Descricao")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<int?>("FinancialEntryId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FormaPagamentoSugerida")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("MotivoCriacao")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("MotivoRejeicao")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("ServiceOrderId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SocioSugerido")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("Token")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Valor")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("ValorCombinadoNaCriacao")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("ValorRecebidoNaCriacao")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FinancialEntryId");
+
+                    b.HasIndex("ServiceOrderId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("FinancialSuggestions");
+                });
+
             modelBuilder.Entity("AnafixtechInformaticaSite.Models.HomePageInformation", b =>
                 {
                     b.Property<int>("Id")
@@ -748,6 +834,23 @@ namespace AnafixtechInformaticaSite.Migrations
                     b.Navigation("ServiceOrder");
 
                     b.Navigation("StockItem");
+                });
+
+            modelBuilder.Entity("AnafixtechInformaticaSite.Models.FinancialSuggestion", b =>
+                {
+                    b.HasOne("AnafixtechInformaticaSite.Models.FinancialEntry", "FinancialEntry")
+                        .WithMany()
+                        .HasForeignKey("FinancialEntryId");
+
+                    b.HasOne("AnafixtechInformaticaSite.Models.ServiceOrder", "ServiceOrder")
+                        .WithMany()
+                        .HasForeignKey("ServiceOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FinancialEntry");
+
+                    b.Navigation("ServiceOrder");
                 });
 
             modelBuilder.Entity("AnafixtechInformaticaSite.Models.HorarioDisponivel", b =>

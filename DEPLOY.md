@@ -212,3 +212,36 @@ Saídas:
 
 Esse hostname (`dpg-...-a`, sem domínio) nunca resolve a partir da sua máquina — isso é
 esperado.
+
+## 6. Sugestões de entrada a partir de OS (Fase 1)
+
+### O que mudou
+- Nova tabela `FinancialSuggestions` e migration aditiva `20261120195028_SugestoesEntradaOS`.
+- Índice único parcial `IX_FinancialSuggestions_UmaPendentePorOS`: no máximo UMA sugestão `Pendente` por OS; o histórico aprovado, ignorado ou cancelado fica preservado.
+- REGRA DE OURO: sugestão pendente NAO é lançamento. Nenhum `FinancialEntry` é gravado sem o clique de OK; pendentes não entram em nenhum total do financeiro.
+
+### Como aplicar
+- A aplicação já roda `banco.Database.Migrate()` no startup quando `Database__MigrateOnStartup=true` (confirmar que está habilitado no Render).
+- Se a subida for manual: `dotnet ef database update` antes de reiniciar o site.
+- A migration é 100% aditiva: cria tabela e índices e não altera dados existentes. Não há downgrade automático; o `Down()` existe apenas para desfazer explicitamente em ambiente de teste.
+
+### Rotina de uso
+1. Ao marcar uma OS como **Concluída**, o sistema cria uma sugestão com o saldo (valor combinado menos o já recebido).
+2. A sugestão aparece em **Visão geral** (cartão "Aguardando OK"), **Financeiro** (banner, fora dos totais) e no detalhe da OS.
+3. No detalhe da OS o administrador escolhe: **OK**, **Editar e aprovar** ou **Ignorar** (com motivo).
+4. Só no OK é gravada uma entrada `Entrada` com origem `OS` e vínculo obrigatório com a OS; a OS é recalculada a partir das entradas.
+5. Aprovação parcial gera automaticamente a próxima sugestão do saldo. OS cancelada com recebido e OS sem valor geram apenas aviso no sino, nunca lançamento automático.
+6. O token da sugestão invalida formulários abertos antes de qualquer decisão (duplo clique ou duas abas não duplicam entradas).
+
+### Conferência pós-deploy (somente contagens, sem dados pessoais)
+```sql
+SELECT count(*) AS pendentes FROM "FinancialSuggestions" WHERE "Status" = 'Pendente';
+SELECT to_regclass('public."IX_FinancialSuggestions_UmaPendentePorOS"') IS NOT NULL AS indice_ok;
+```
+
+### Validação antes de subir
+```
+dotnet build AnafixtechInformaticaSite.slnx
+dotnet test AnafixtechInformaticaSite.slnx
+```
+Os testes usam apenas dados fictícios e cobrem total, parcial, excesso, mudança de preço, cancelamento, idempotência, concorrência, arredondamento, formato brasileiro, janela de reconciliação e regressão dos fluxos manuais.

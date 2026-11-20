@@ -45,6 +45,21 @@
     </a>
 </div>
 
+@* ===== Recebimentos sugeridos: dinheiro que ainda NÃO entrou no financeiro ===== *@
+<div class="db-card db-mb">
+    <div class="db-card-head">
+        <h2>
+            Aguardando OK
+            <span class="db-badge db-badge--amber">@Model.SugestoesPendentes</span>
+        </h2>
+        <a class="db-btn db-btn--sm" asp-controller="Dashboard" asp-action="Financeiro">Ver sugestões</a>
+    </div>
+    <div>
+        <strong>@Fmt.Money(Model.TotalSugestoesPendentes)</strong>
+        <span class="db-muted">em recebimentos sugeridos. Nada disso entra nos totais do financeiro até você dar o OK.</span>
+    </div>
+</div>
+
 @* ===== Linha 2: indicadores financeiros do mês ===== *@
 <div class="db-grid db-grid--4">
     @* Total recebido no mês. *@

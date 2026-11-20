@@ -21,6 +21,7 @@ namespace AnafixtechInformaticaSite.Data
         public DbSet<ServiceOrder> ServiceOrders { get; set; }               // ordens de serviço
         public DbSet<StatusHistoryEntry> StatusHistory { get; set; }         // histórico de status das OS
         public DbSet<FinancialEntry> FinancialEntries { get; set; }          // lançamentos financeiros
+        public DbSet<FinancialSuggestion> FinancialSuggestions { get; set; } // sugestões de entrada (esperam o OK)
         public DbSet<StockItem> StockItems { get; set; }                     // peças do estoque
         public DbSet<Agendamento> Agendamentos { get; set; }                 // compromissos da agenda
         public DbSet<HorarioDisponivel> HorariosDisponiveis { get; set; }    // horários disponíveis
@@ -50,6 +51,7 @@ namespace AnafixtechInformaticaSite.Data
             configurationBuilder.Properties<PaymentMethod>().HaveConversion<string>();
             configurationBuilder.Properties<EntryType>().HaveConversion<string>();
             configurationBuilder.Properties<EntryOrigin>().HaveConversion<string>();
+            configurationBuilder.Properties<SuggestionStatus>().HaveConversion<string>();
             configurationBuilder.Properties<AgendamentoTipo>().HaveConversion<string>();
             configurationBuilder.Properties<AgendamentoStatus>().HaveConversion<string>();
             configurationBuilder.Properties<SlotStatus>().HaveConversion<string>();
@@ -58,6 +60,25 @@ namespace AnafixtechInformaticaSite.Data
             configurationBuilder.Properties<NotificationType>().HaveConversion<string>();
             configurationBuilder.Properties<RequestStatus>().HaveConversion<string>();
             configurationBuilder.Properties<BillingCycle>().HaveConversion<string>();
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Sugestões: uma OS pode ter várias decisões no histórico, mas só UMA pendente.
+            // O índice parcial (WHERE Status = 'Pendente') é criado por SQL na migration,
+            // porque a configuração fluente do EF não consegue expressar um filtro assim.
+            modelBuilder.Entity<FinancialSuggestion>()
+                .HasIndex(x => x.ServiceOrderId);
+            modelBuilder.Entity<FinancialSuggestion>()
+                .HasIndex(x => x.Status);
+
+            // Token de concorrência: se duas abas aprovarem a mesma sugestão, a segunda
+            // gravação falha (DbUpdateConcurrencyException) em vez de criar outra entrada.
+            modelBuilder.Entity<FinancialSuggestion>()
+                .Property(x => x.Token)
+                .IsConcurrencyToken();
         }
     }
 }
