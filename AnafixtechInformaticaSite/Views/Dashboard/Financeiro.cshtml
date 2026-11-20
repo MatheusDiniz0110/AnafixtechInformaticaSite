@@ -19,28 +19,139 @@
     </div>
 </div>
 
-@* ===== Banner "Aguardando OK": sugestões pendentes NÃO somam nos totais abaixo ===== *@
+@* ===== Banner "Aguardando OK": pendentes NÃO somam nos totais; lote exige confirmação ===== *@
 @if (Model.SugestoesPendentes.Any())
 {
-    <div class="db-card db-mb">
+    var totalPendente = Model.SugestoesPendentes.Sum(s => s.Valor);
+
+    <form method="post" asp-controller="Dashboard" asp-action="SugestoesAprovarLote"
+          id="form-lote" class="db-card db-mb" data-confirmar="true">
         <div class="db-card-head">
             <h2>Aguardando OK <span class="db-badge db-badge--amber">@Model.SugestoesPendentes.Count</span></h2>
-            <span class="db-muted">@Fmt.Money(Model.SugestoesPendentes.Sum(s => s.Valor)) em sugestões (fora dos totais)</span>
+            <span class="db-muted">@Fmt.Money(totalPendente) em sugestões (fora dos totais)</span>
         </div>
-        <ul class="db-list">
-            @foreach (var s in Model.SugestoesPendentes)
-            {
-                <li>
-                    <span>
-                        <a asp-controller="Dashboard" asp-action="PedidoDetalhes" asp-route-id="@s.ServiceOrderId">@(s.ServiceOrder?.Codigo ?? $"OS-{s.ServiceOrderId:D5}")</a>
-                        <span class="db-muted">· @Fmt.Date(s.DataSugerida) · @s.FormaPagamentoSugerida.ToLabel() · @s.MotivoCriacao</span>
-                    </span>
-                    <strong class="db-pos">@Fmt.Money(s.Valor)</strong>
-                </li>
-            }
-        </ul>
-        <div class="db-muted db-mt-xs">Abra a OS para dar o OK, editar ou ignorar. Enquanto isso, nenhum lançamento foi gravado.</div>
+
+        <div class="db-table-wrap">
+            <table class="db-table db-table--compact">
+                <thead>
+                    <tr><th></th><th>OS</th><th>Data sugerida</th><th>Forma</th><th>Sócio</th><th class="db-num">Valor sugerido</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model.SugestoesPendentes)
+                    {
+                        <tr>
+                            <td>
+                                <label class="db-check">
+                                    @* id e token viajam juntos: um formulário antigo não decide uma sugestão mudada. *@
+                                    <input type="checkbox" name="Selecionadas" value="@(s.Id)|@(s.Token)"
+                                           data-valor="@s.Valor.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" />
+                                    <span class="db-muted">Selecionar</span>
+                                </label>
+                            </td>
+                            <td><a asp-controller="Dashboard" asp-action="PedidoDetalhes" asp-route-id="@s.ServiceOrderId">@(s.ServiceOrder?.Codigo ?? $"OS-{s.ServiceOrderId:D5}")</a></td>
+                            <td>@Fmt.Date(s.DataSugerida)</td>
+                            <td>@s.FormaPagamentoSugerida.ToLabel()</td>
+                            <td>@s.SocioSugerido</td>
+                            <td class="db-num db-pos">@Fmt.Money(s.Valor)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="db-form db-mt">
+            <div class="db-field">
+                <label>Data para o lote (opcional)</label>
+                <input type="date" name="Data" class="db-input" />
+            </div>
+            <div class="db-field">
+                <label>Forma de pagamento (opcional)</label>
+                <select name="FormaPagamento" class="db-select">
+                    <option value="">Manter a sugerida</option>
+                    @foreach (var forma in Enum.GetValues<PaymentMethod>())
+                    {
+                        <option value="@forma">@forma.ToLabel()</option>
+                    }
+                </select>
+            </div>
+            <div class="db-field db-field--full">
+                <label>Observação comum (opcional)</label>
+                <input type="text" name="Observacao" maxlength="400" class="db-input" />
+            </div>
+        </div>
+
+        <div class="db-inline db-mt">
+            <input type="hidden" name="AprovarTodas" id="aprovar-todas" value="false" />
+            <button type="submit" class="db-btn db-btn--primary" data-lote="selecionadas">Aprovar selecionadas</button>
+            <button type="submit" class="db-btn" data-lote="todas">Aprovar todas</button>
+            <span class="db-muted">Valores e sócios continuam individuais. Nada é gravado antes da confirmação.</span>
+        </div>
+    </form>
+
+    @* Confirmação: mostra quantidade e total; só o clique em Confirmar faz o POST. *@
+    <div id="modal-lote" class="db-modal" role="dialog" aria-modal="true" aria-labelledby="modal-lote-titulo" hidden>
+        <div class="db-modal-box db-card">
+            <h2 id="modal-lote-titulo">Confirmar aprovação em lote</h2>
+            <p id="modal-lote-resumo" class="db-modal-resumo"></p>
+            <p class="db-muted">Nenhum lançamento existe até você confirmar. Depois da confirmação, cada OS é recalculada a partir das entradas gravadas.</p>
+            <div class="db-inline">
+                <button type="button" class="db-btn" id="modal-lote-cancelar">Cancelar</button>
+                <button type="button" class="db-btn db-btn--primary" id="modal-lote-confirmar">Confirmar aprovação</button>
+            </div>
+        </div>
     </div>
+
+    <script>
+        (function () {
+            var form = document.getElementById('form-lote');
+            var modal = document.getElementById('modal-lote');
+            if (!form || !modal) return;
+
+            var resumo = document.getElementById('modal-lote-resumo');
+            var confirmar = document.getElementById('modal-lote-confirmar');
+            var cancelar = document.getElementById('modal-lote-cancelar');
+            var todasFlag = document.getElementById('aprovar-todas');
+            var moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+            var pendente = null;
+
+            form.addEventListener('submit', function (event) {
+                if (form.dataset.confirmar !== 'true') return;
+                event.preventDefault();
+
+                var todas = !!event.submitter && event.submitter.dataset.lote === 'todas';
+                var caixas = Array.from(form.querySelectorAll('input[name="Selecionadas"]'));
+                var itens = todas ? caixas : caixas.filter(function (c) { return c.checked; });
+
+                if (itens.length === 0) {
+                    window.alert('Selecione ao menos uma sugestão.');
+                    return;
+                }
+
+                var total = itens.reduce(function (soma, caixa) {
+                    return soma + (parseFloat(caixa.dataset.valor) || 0);
+                }, 0);
+                resumo.textContent = 'Você vai aprovar ' + itens.length + ' sugestão(ões), totalizando '
+                    + moeda.format(total) + '.';
+                pendente = { todas: todas };
+                modal.hidden = false;
+            });
+
+            cancelar.addEventListener('click', function () {
+                pendente = null;
+                modal.hidden = true;
+            });
+
+            confirmar.addEventListener('click', function () {
+                if (!pendente) return;
+                // Desarma o submit e os botões: um duplo clique não pode gerar outro POST.
+                form.dataset.confirmar = 'false';
+                confirmar.disabled = true;
+                cancelar.disabled = true;
+                todasFlag.value = pendente.todas ? 'true' : 'false';
+                form.submit();
+            });
+        })();
+    </script>
 }
 
 @* Filtros: período, tipo e sócio (método GET: ficam no endereço). *@

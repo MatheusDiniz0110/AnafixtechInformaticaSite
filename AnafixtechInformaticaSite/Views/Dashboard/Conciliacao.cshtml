@@ -1,0 +1,60 @@
+@* Relatório de conciliação: SOMENTE contagens. Não cria sugestões nem lança entradas. *@
+@model RelatorioConciliacao
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Conciliação";
+    ViewData["Tab"] = "Conciliação";
+}
+
+<div class="db-card-head">
+    <h2>Conciliação do histórico antigo</h2>
+    <span class="db-muted">Gerado em @Fmt.Stamp(Model.GeradoEm)</span>
+</div>
+
+<div class="db-alert db-alert--ok">
+    Esta tela só lê e conta. Ela não cria sugestões, não aprova nada e não mostra nomes,
+    descrições nem valores individuais. As OS antigas continuam sem sugestão, como decidido.
+</div>
+
+<div class="db-grid db-grid--4">
+    <div class="db-kpi"><div class="db-kpi-label">OS antigas contadas</div><div class="db-kpi-value">@Model.TotalAntigas</div></div>
+    <div class="db-kpi"><div class="db-kpi-label">Janela da reconciliação leve</div><div class="db-kpi-value">@Model.JanelaDias dias</div></div>
+    <div class="db-kpi"><div class="db-kpi-label">Sugestões pendentes</div><div class="db-kpi-value">@Model.SugestoesPendentes</div></div>
+    <div class="db-kpi"><div class="db-kpi-label">Sugestões aprovadas</div><div class="db-kpi-value">@Model.SugestoesAprovadas</div></div>
+</div>
+
+<div class="db-grid db-grid--2">
+    <div class="db-card">
+        <h2>Por idade das OS fechadas</h2>
+        <ul class="db-list">
+            <li><span>Até @Model.JanelaDias dias (janela leve)</span><strong>@Model.Ate30Dias</strong></li>
+            <li><span>Entre @(Model.JanelaDias + 1) e 90 dias</span><strong>@Model.De31A90Dias</strong></li>
+            <li><span>Mais de 90 dias</span><strong>@Model.MaisDe90Dias</strong></li>
+        </ul>
+        <div class="db-muted db-mt-xs">Só a primeira faixa é visitada pela reconciliação automática.</div>
+    </div>
+
+    <div class="db-card">
+        <h2>Por estado das OS antigas</h2>
+        <ul class="db-list">
+            <li><span>Sem valor definido</span><strong>@Model.SemValor</strong></li>
+            <li><span>Quitadas</span><strong>@Model.Quitadas</strong></li>
+            <li><span>Recebimento parcial</span><strong>@Model.Parciais</strong></li>
+            <li><span>Sem recebimento</span><strong>@Model.SemRecebimento</strong></li>
+            <li><span>Recebido acima do combinado</span><strong>@Model.RecebidoACMais</strong></li>
+            <li><span>Canceladas com recebido</span><strong>@Model.CanceladasComRecebido</strong></li>
+        </ul>
+    </div>
+
+    <div class="db-card">
+        <h2>Histórico de sugestões</h2>
+        <ul class="db-list">
+            <li><span>Pendentes (fora dos totais)</span><strong>@Model.SugestoesPendentes</strong></li>
+            <li><span>Aprovadas</span><strong>@Model.SugestoesAprovadas</strong></li>
+            <li><span>Ignoradas</span><strong>@Model.SugestoesIgnoradas</strong></li>
+            <li><span>Canceladas</span><strong>@Model.SugestoesCanceladas</strong></li>
+        </ul>
+    </div>
+</div>
+
+<p class="db-muted db-mt">Para liberar uma OS antiga, abra a OS e marque-a como Concluída novamente: a reconciliação leve passa a vê-la e cria uma sugestão, que ainda exige OK.</p>

@@ -130,6 +130,19 @@ namespace AnafixtechInformaticaSite.Models.ViewModels
         public bool Cortado { get; set; }           // true = havia mais linhas do que o limite exibido
     }
 
+    // Formulário da aprovação em lote na aba Financeiro.
+    public class AprovacaoLoteViewModel
+    {
+        // Cada valor é "id|token": o token via junto com o checkbox para que um
+        // formulário aberto antes de uma decisão não aprove uma sugestão mudada.
+        public List<string> Selecionadas { get; set; } = new();
+        public bool AprovarTodas { get; set; }      // "todas" = pendentes exibidas no banner
+        public DateOnly? Data { get; set; }         // ajuste comum (vazio = manter a sugerida)
+        public PaymentMethod? FormaPagamento { get; set; } // idem
+        [StringLength(400, ErrorMessage = "A observação pode ter até 400 caracteres.")]
+        public string? Observacao { get; set; }     // ajuste comum para todo o lote
+    }
+
     // Formulário de lançamento financeiro (novo ou edição).
     public class LancamentoFormViewModel
     {

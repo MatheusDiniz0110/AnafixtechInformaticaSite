@@ -29,6 +29,70 @@ namespace AnafixtechInformaticaSite.Services
         public string? Observacao { get; set; }
     }
 
+    // Um item do lote: par (sugestão, token) que veio do formulário. O token via junto
+    // com o checkbox para que um formulário antigo não decida uma sugestão já mudada.
+    public class ItemAprovacaoLote
+    {
+        public int Id { get; set; }
+        public Guid Token { get; set; }
+    }
+
+    // Ajustes permitidos no lote: só data, forma e observação.
+    // Valor e sócio ficam de fora de propósito: cada sugestão mantém os seus.
+    public class AjustesLote
+    {
+        public DateOnly? Data { get; set; }
+        public PaymentMethod? FormaPagamento { get; set; }
+        public string? Observacao { get; set; }
+    }
+
+    // Resumo do lote. As mensagens são curtas e usam só o código da OS (nunca nomes).
+    public class ResultadoLote
+    {
+        public int Aprovados { get; set; }
+        public int Conflitos { get; set; }
+        public int Erros { get; set; }
+        public decimal ValorTotal { get; set; } // soma só dos que foram aprovados
+        public List<string> Atencoes { get; set; } = new();
+
+        public string Mensagem
+        {
+            get
+            {
+                var texto = Aprovados > 0
+                    ? $"{Aprovados} sugestão(ões) aprovada(s), totalizando {Fmt.Money(ValorTotal)}."
+                    : "Nenhuma sugestão foi aprovada.";
+                if (Conflitos > 0) texto += $" {Conflitos} conflito(s).";
+                if (Erros > 0) texto += $" {Erros} erro(s).";
+                foreach (var atencao in Atencoes.Take(3)) texto += $" {atencao}";
+                if (Atencoes.Count > 3) texto += " ...";
+                return texto;
+            }
+        }
+    }
+
+    // Relatório de conciliação: SOMENTE contagens. Não cria sugestões nem lançamentos
+    // e não mostra nomes, descrições nem valores individuais.
+    public class RelatorioConciliacao
+    {
+        public int JanelaDias { get; set; }       // tamanho da janela da reconciliação leve
+        public DateTime GeradoEm { get; set; }
+        public int TotalAntigas { get; set; }     // OS fechadas antes da janela
+        public int Ate30Dias { get; set; }
+        public int De31A90Dias { get; set; }
+        public int MaisDe90Dias { get; set; }
+        public int SemValor { get; set; }
+        public int Quitadas { get; set; }
+        public int Parciais { get; set; }
+        public int SemRecebimento { get; set; }
+        public int RecebidoACMais { get; set; }
+        public int CanceladasComRecebido { get; set; }
+        public int SugestoesPendentes { get; set; }
+        public int SugestoesAprovadas { get; set; }
+        public int SugestoesIgnoradas { get; set; }
+        public int SugestoesCanceladas { get; set; }
+    }
+
     // ==========================================================================================
     // OsFinancialService — ÚNICA fonte de verdade do financeiro ligado a Ordens de Serviço.
     //
@@ -327,6 +391,109 @@ namespace AnafixtechInformaticaSite.Services
         }
 
         // --------------------------------------------------------------------------------------
+        // AprovarLote — aprovação em massa com UM clique explícito no modal de confirmação.
+        // Cada item passa pelo AprovarSugestao: mesmo token fresco, mesma transação,
+        // mesmo recálculo da OS. Um conflito ou erro em um item não bloqueia os demais;
+        // o resumo conta sucessos, conflitos e erros e soma só o que foi gravado.
+        // --------------------------------------------------------------------------------------
+        public async Task<ResultadoLote> AprovarLote(IReadOnlyList<ItemAprovacaoLote> itens,
+            AjustesLote? ajustes, string usuario, CancellationToken ct = default)
+        {
+            var resultado = new ResultadoLote();
+
+            if (itens == null || itens.Count == 0)
+            {
+                resultado.Erros = 1;
+                resultado.Atencoes.Add("Selecione ao menos uma sugestão.");
+                return resultado;
+            }
+
+            // Uma mesma sugestão não entra duas vezes no lote, mesmo que o formulário
+            // tenha sido manipulado. O teto é o mesmo das telas (LimiteLinhas).
+            var unicos = itens.Where(i => i.Id > 0).GroupBy(i => i.Id).Select(g => g.First()).ToList();
+            if (unicos.Count == 0)
+            {
+                resultado.Erros = 1;
+                resultado.Atencoes.Add("Selecione ao menos uma sugestão válida.");
+                return resultado;
+            }
+            if (unicos.Count > 300)
+            {
+                resultado.Erros = 1;
+                resultado.Atencoes.Add("O lote passou do limite de 300 sugestões por vez.");
+                return resultado;
+            }
+
+            // O estado atual e o token vêm do banco, nunca só do formulário. Assim uma
+            // aba aberta antes de uma decisão não aprova uma sugestão que já mudou.
+            var ids = unicos.Select(i => i.Id).ToList();
+            var noBanco = await _context.FinancialSuggestions.AsNoTracking()
+                .Where(s => ids.Contains(s.Id))
+                .Select(s => new { s.Id, s.Token, s.Status, s.ServiceOrderId })
+                .ToListAsync(ct);
+            var porId = noBanco.ToDictionary(x => x.Id);
+
+            var ajustesIndividuais = new AjustesAprovacao
+            {
+                Data = ajustes?.Data,
+                FormaPagamento = ajustes?.FormaPagamento,
+                Observacao = ajustes?.Observacao
+                // Valor e Socio ficam nulos: cada sugestão mantém os seus.
+            };
+
+            foreach (var item in unicos)
+            {
+                if (!porId.TryGetValue(item.Id, out var atual))
+                {
+                    resultado.Conflitos++;
+                    resultado.Atencoes.Add("Uma sugestão selecionada não existe mais.");
+                    continue;
+                }
+
+                var codigo = $"OS-{atual.ServiceOrderId:D5}";
+                if (atual.Status != SuggestionStatus.Pendente || atual.Token != item.Token)
+                {
+                    resultado.Conflitos++;
+                    resultado.Atencoes.Add($"Conflito na {codigo}: já decidida ou token alterado.");
+                    continue;
+                }
+
+                try
+                {
+                    // A gravação acontece aqui, dentro da aprovação individual, nunca antes.
+                    var decisao = await AprovarSugestao(item.Id, item.Token, usuario, ajustesIndividuais, ct);
+                    if (decisao.Sucesso)
+                    {
+                        resultado.Aprovados++;
+                        resultado.ValorTotal = Arredondar(resultado.ValorTotal + decisao.Valor);
+                    }
+                    else if (decisao.Conflito)
+                    {
+                        resultado.Conflitos++;
+                        resultado.Atencoes.Add($"Conflito na {codigo}: outra aba decidiu primeiro.");
+                    }
+                    else
+                    {
+                        resultado.Erros++;
+                        resultado.Atencoes.Add($"Não foi possível aprovar a {codigo}: {decisao.Mensagem}");
+                    }
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch
+                {
+                    // Não devolvemos ex.Message: um erro de banco pode revelar detalhes técnicos.
+                    resultado.Erros++;
+                    resultado.Atencoes.Add($"Falha ao gravar a {codigo}.");
+                }
+            }
+
+            return resultado;
+        }
+
+        // --------------------------------------------------------------------------------------
         // RejeitarSugestao — "Ignorar" com motivo curto. Não apaga nada e não cria entrada.
         // --------------------------------------------------------------------------------------
         public async Task<ResultadoSugestao> RejeitarSugestao(int id, Guid token, string motivo,
@@ -385,6 +552,60 @@ namespace AnafixtechInformaticaSite.Services
                 .ToListAsync(ct);
 
             foreach (var id in ids) await ReconciliarOS(id, ct);
+        }
+
+        // --------------------------------------------------------------------------------------
+        // Relatório de conciliação do histórico antigo (fora da janela leve).
+        // SOMENTE LEITURA: não chama ReconciliarOS, não cria sugestões e não grava entries.
+        // As consultas trazem só números e enums: nenhum nome/ementa sai do banco.
+        // --------------------------------------------------------------------------------------
+        public async Task<RelatorioConciliacao> GerarRelatorioConciliacaoAsync(CancellationToken ct = default)
+        {
+            var relatorio = new RelatorioConciliacao
+            {
+                JanelaDias = DiasReconciliacaoLeve,
+                GeradoEm = Clock.Now
+            };
+
+            var limite = Clock.Today.AddDays(-DiasReconciliacaoLeve).ToDateTime(TimeOnly.MinValue);
+            var limite90 = Clock.Today.AddDays(-90).ToDateTime(TimeOnly.MinValue);
+
+            var fechadas = _context.ServiceOrders.AsNoTracking()
+                .Where(o => o.Status == OrderStatus.Completed || o.Status == OrderStatus.Cancelled);
+
+            relatorio.Ate30Dias = await fechadas.CountAsync(o => o.UpdatedAt >= limite, ct);
+            relatorio.De31A90Dias = await fechadas.CountAsync(o => o.UpdatedAt < limite && o.UpdatedAt >= limite90, ct);
+            relatorio.MaisDe90Dias = await fechadas.CountAsync(o => o.UpdatedAt < limite90, ct);
+
+            // Antigas = exatamente o conjunto que a reconciliação leve não visita.
+            var antigas = await fechadas.Where(o => o.UpdatedAt < limite)
+                .Select(o => new
+                {
+                    o.Status,
+                    Devido = (decimal?)(o.FinalPrice ?? o.EstimatedPrice) ?? 0m,
+                    o.ValorRecebido
+                })
+                .ToListAsync(ct);
+
+            relatorio.TotalAntigas = antigas.Count;
+            relatorio.SemValor = antigas.Count(x => x.Status == OrderStatus.Completed && x.Devido <= 0m);
+            relatorio.Quitadas = antigas.Count(x => x.Status == OrderStatus.Completed && x.Devido > 0m && x.ValorRecebido >= x.Devido);
+            relatorio.Parciais = antigas.Count(x => x.Status == OrderStatus.Completed && x.ValorRecebido > 0m && x.ValorRecebido < x.Devido);
+            relatorio.SemRecebimento = antigas.Count(x => x.Status == OrderStatus.Completed && x.Devido > 0m && x.ValorRecebido <= 0m);
+            relatorio.RecebidoACMais = antigas.Count(x => x.Status == OrderStatus.Completed && x.Devido > 0m && x.ValorRecebido > x.Devido);
+            relatorio.CanceladasComRecebido = antigas.Count(x => x.Status == OrderStatus.Cancelled && x.ValorRecebido > 0m);
+
+            var porStatus = await _context.FinancialSuggestions.AsNoTracking()
+                .GroupBy(s => s.Status)
+                .Select(g => new { Status = g.Key, Total = g.Count() })
+                .ToListAsync(ct);
+
+            relatorio.SugestoesPendentes = porStatus.FirstOrDefault(x => x.Status == SuggestionStatus.Pendente)?.Total ?? 0;
+            relatorio.SugestoesAprovadas = porStatus.FirstOrDefault(x => x.Status == SuggestionStatus.Aprovada)?.Total ?? 0;
+            relatorio.SugestoesIgnoradas = porStatus.FirstOrDefault(x => x.Status == SuggestionStatus.Rejeitada)?.Total ?? 0;
+            relatorio.SugestoesCanceladas = porStatus.FirstOrDefault(x => x.Status == SuggestionStatus.Cancelada)?.Total ?? 0;
+
+            return relatorio;
         }
 
         // --------------------------------------------------------------------------------------

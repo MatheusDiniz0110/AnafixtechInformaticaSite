@@ -540,6 +540,59 @@ namespace AnafixtechInformaticaSite.Controllers
                 .FirstOrDefault();
         }
 
+        // Aprovação em lote. O formulário manda pares "id|token"; o botão "Aprovar todas"
+        // ignora esses pares e usa as pendentes do banco (mesma ordem/limite do banner).
+        [HttpPost]
+        public async Task<IActionResult> SugestoesAprovarLote(AprovacaoLoteViewModel form)
+        {
+            if (!ModelState.IsValid)
+            {
+                Mensagem(false, ErrosDoFormulario());
+                return RedirectToAction(nameof(Financeiro));
+            }
+
+            var itens = new List<ItemAprovacaoLote>();
+
+            if (form.AprovarTodas)
+            {
+                itens = await _context.FinancialSuggestions.AsNoTracking()
+                    .Where(s => s.Status == SuggestionStatus.Pendente)
+                    .OrderBy(s => s.DataSugerida).ThenBy(s => s.Id)
+                    .Take(LimiteLinhas)
+                    .Select(s => new ItemAprovacaoLote { Id = s.Id, Token = s.Token })
+                    .ToListAsync();
+            }
+            else
+            {
+                foreach (var par in form.Selecionadas ?? new List<string>())
+                {
+                    if (string.IsNullOrWhiteSpace(par)) continue;
+
+                    var partes = par.Split('|');
+                    if (partes.Length != 2 ||
+                        !int.TryParse(partes[0], out var id) ||
+                        !Guid.TryParse(partes[1], out var token))
+                    {
+                        Mensagem(false, "Formulário de lote inválido. Recarregue a página e tente novamente.");
+                        return RedirectToAction(nameof(Financeiro));
+                    }
+                    itens.Add(new ItemAprovacaoLote { Id = id, Token = token });
+                }
+            }
+
+            var ajustes = new AjustesLote
+            {
+                Data = form.Data,
+                FormaPagamento = form.FormaPagamento,
+                Observacao = form.Observacao
+            };
+
+            var resultado = await _financeiro.AprovarLote(itens, ajustes, NomeDoUsuario());
+            Mensagem(resultado.Aprovados > 0 && resultado.Conflitos == 0 && resultado.Erros == 0,
+                resultado.Mensagem);
+            return RedirectToAction(nameof(Financeiro));
+        }
+
         // Exclui uma OS (somente se ela ainda não tiver pagamentos).  →  POST /Dashboard/PedidoExcluir
         [HttpPost]
         public async Task<IActionResult> PedidoExcluir(int id)
@@ -637,6 +690,13 @@ namespace AnafixtechInformaticaSite.Controllers
             vm.Lancamentos = lista.Take(LimiteLinhas).ToList(); // mostra só até o limite
             vm.SugestoesPendentes = sugestoes;                  // banner (fora dos totais)
             return View(vm);
+        }
+
+        // Relatório de conciliação do histórico antigo. SOMENTE LEITURA: não chama
+        // ReconciliarRecentesAsync, então nunca cria sugestões em massa. → /Dashboard/Conciliacao
+        public async Task<IActionResult> Conciliacao()
+        {
+            return View(await _financeiro.GerarRelatorioConciliacaoAsync());
         }
 
         // Formulário de novo lançamento.  →  GET /Dashboard/LancamentoNovo

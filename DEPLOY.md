@@ -245,3 +245,38 @@ dotnet build AnafixtechInformaticaSite.slnx
 dotnet test AnafixtechInformaticaSite.slnx
 ```
 Os testes usam apenas dados fictícios e cobrem total, parcial, excesso, mudança de preço, cancelamento, idempotência, concorrência, arredondamento, formato brasileiro, janela de reconciliação e regressão dos fluxos manuais.
+
+## 7. Aprovação em lote e conciliação (Fase 2)
+
+### O que mudou
+- Nenhuma migration nova: a Fase 2 usa apenas colunas já criadas na Fase 1.
+- **Financeiro**: o banner "Aguardando OK" virou um formulário de lote com um checkbox por sugestão. Cada checkbox carrega o par `id|token`; o token via junto e impede que um formulário aberto antes de uma decisão aprove uma sugestão alterada.
+- Ajuste comum opcional para todo o lote: **data**, **forma de pagamento** e **observação**. Valores e sócios sugeridos continuam individuais.
+- Botões **Aprovar selecionadas** e **Aprovar todas** (estas últimas, limitadas às pendentes exibidas no banner). Ambos abrem um modal com quantidade e total; só o clique em **Confirmar aprovação** faz o POST e grava entradas.
+- Resumo no topo da tela: quantidade aprovada, total aprovado, conflitos e erros. Conflito parcial não impede os demais itens.
+- Nova aba **Conciliação** (`/Dashboard/Conciliacao`): relatório somente leitura do histórico fora da janela de 30 dias, com contagens por idade e por estado das OS e por status das sugestões. Não cria sugestões, não lança entradas e não mostra nomes, descrições nem valores individuais.
+
+### Rotina de uso
+1. Abrir **Financeiro**. O banner mostra as sugestões pendentes, todas fora dos totais da tela.
+2. Marcar as desejadas (ou usar **Aprovar todas**) e, se quiser, preencher data/forma/observação comuns.
+3. Clicar em aprovar: o modal mostra quantidade e total antes de qualquer gravação.
+4. Confirmar. Cada sugestão passa pela mesma regra da aprovação individual: token fresco, transação, entrada com origem `OS` e vínculo com a OS, recálculo da OS e, se sobrar saldo, nova sugestão.
+5. Se outra aba decidiu uma sugestão no meio do caminho, ela conta como conflito; as demais são aprovadas normalmente. Um clique repetido com a lista antiga não grava nada.
+6. Para conferir o histórico antigo sem gerar nada, abrir **Conciliação**. Para liberar uma OS antiga, reabrir a OS e marcá-la como Concluída novamente: a reconciliação leve passa a vê-la e cria uma sugestão, que ainda exige OK.
+
+### Conferência pós-deploy (somente contagens, sem dados pessoais)
+```sql
+SELECT count(*) AS aprovadas_com_entry FROM "FinancialSuggestions"
+  WHERE "Status" = 'Aprovada' AND "FinancialEntryId" IS NOT NULL;
+SELECT count(*) AS aprovadas_sem_entry FROM "FinancialSuggestions"
+  WHERE "Status" = 'Aprovada' AND "FinancialEntryId" IS NULL;
+SELECT count(*) AS pendentes FROM "FinancialSuggestions" WHERE "Status" = 'Pendente';
+```
+`aprovadas_sem_entry` precisa ser zero: toda sugestão aprovada tem que ter um lançamento vinculado.
+
+### Validação antes de subir
+```
+dotnet build AnafixtechInformaticaSite.slnx
+dotnet test AnafixtechInformaticaSite.slnx
+```
+Os testes novos cobrem ajuste comum (com valores e sócios individuais preservados), conflito parcial, seleção vazia, "aprovar todas" com token inválido no formulário, par `id|token` malformado, relatório somente leitura e ausência de dados pessoais no resumo. Nenhuma variável de ambiente ou configuração do Render foi alterada por esta fase.
