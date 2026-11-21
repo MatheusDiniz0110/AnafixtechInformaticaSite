@@ -280,3 +280,36 @@ dotnet build AnafixtechInformaticaSite.slnx
 dotnet test AnafixtechInformaticaSite.slnx
 ```
 Os testes novos cobrem ajuste comum (com valores e sócios individuais preservados), conflito parcial, seleção vazia, "aprovar todas" com token inválido no formulário, par `id|token` malformado, relatório somente leitura e ausência de dados pessoais no resumo. Nenhuma variável de ambiente ou configuração do Render foi alterada por esta fase.
+
+## 8. Custo/lucro por OS e lembrete de 3 dias (Fase 3)
+
+### O que mudou
+- **Nenhuma migration nova.** A Fase 3 usa apenas colunas já existentes (`ServiceOrder.StockItemId`, `StockItem.PurchasePrice`, `FinancialSuggestion.DataSugerida`).
+- **Custo e lucro por OS** (somente leitura, no detalhe da OS): o custo vem da peça vinculada (`PurchasePrice` atual). Custo/lucro são **cálculos para a tela**: nunca viram `FinancialEntry`, nunca entram em total de caixa e nunca baixam estoque.
+  - Sem peça vinculada ou sem `PurchasePrice`, o custo aparece como **"Não informado"** (nunca `R$ 0,00`) e o lucro fica como `—`.
+  - Lucro = **entradas realmente ligadas à OS** (`EntryType.Entrada`) − custo da peça. Sugestão pendente **não** é recebido e fica fora desse número; o valor entra no lucro só depois do OK que grava a entrada.
+- **Lembrete de 3 dias**: sugestões `Pendente` com `DataSugerida` até hoje−3 ganham um aviso no sino (`NotificationType.Suggestion`, `RefType = "order"`, título `Lembrete: OS-XXXXX aguardando OK`). A deduplicação reaproveita a regra de um aviso por OS/título, então rodar todas as vezes que uma tela abre não duplica.
+  - Disparo ao abrir **Visão geral**, **Financeiro** e **Notificações** (o Render hiberna; não existe job agendado). O contador do sino é recalculado na mesma resposta para o número já aparecer certo.
+  - O lembrete só avisa: não cria sugestão, não aprova nada, não grava `FinancialEntry` e a sugestão continua pendente.
+
+### Rotina de uso
+1. Abrir o detalhe de uma OS: conferir **Custo da peça vinculada** e **Lucro realizado**. Se a peça não tiver preço de compra, o custo aparece como "Não informado".
+2. Uma sugestão com 3 dias ou mais sem decisão gera um aviso no sino na próxima vez que uma das telas acima abrir; o aviso aparece uma única vez por OS.
+3. Aprovar ou ignorar a sugestão normalmente. O lucro passa a considerar o recebido assim que a entrada é gravada.
+
+### Conferência pós-deploy (somente contagens, sem dados pessoais)
+```sql
+SELECT count(*) AS lembretes FROM "Notifications" WHERE "Title" LIKE 'Lembrete:%';
+SELECT count(*) AS sugestoes_com_lembrete_duplicado FROM (
+  SELECT "RefId", "Title", count(*) AS n FROM "Notifications"
+  WHERE "Title" LIKE 'Lembrete:%' GROUP BY "RefId", "Title"
+) AS duplicatas WHERE n > 1;
+```
+`sugestoes_com_lembrete_duplicado` precisa ser zero: no máximo um lembrete por OS.
+
+### Validação antes de subir
+```
+dotnet build AnafixtechInformaticaSite.slnx
+dotnet test AnafixtechInformaticaSite.slnx
+```
+Os testes novos cobrem custo informado, custo ausente (sem preço e sem peça), lucro sobre recebido, sugestão pendente fora do recebido até a aprovação, lembrete aos 3 dias, ausência de lembrete antes disso, deduplicação, exposição do cálculo no detalhe da OS, atualização do contador do sino e ausência de dados pessoais no aviso. Nenhuma variável de ambiente ou configuração do Render foi alterada por esta fase.

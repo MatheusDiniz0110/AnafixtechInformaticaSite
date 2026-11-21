@@ -152,6 +152,20 @@
         <div class="db-kpi"><div class="db-kpi-label">Último pagamento</div><div class="db-kpi-value db-kpi-value--sm">@Fmt.Date(p.PaymentDate)</div><div class="db-kpi-hint">@(p.PaymentMethod.HasValue ? p.PaymentMethod.Value.ToLabel() : "—")</div></div>
     </div>
 
+    @* Custo e lucro são cálculos somente leitura. Nunca viram lançamento automático. *@
+    <div class="db-grid db-grid--2 db-mt-sm">
+        <div class="db-kpi">
+            <div class="db-kpi-label">Custo da peça vinculada</div>
+            <div class="db-kpi-value">@(Model.CustoPecas.HasValue ? Fmt.Money(Model.CustoPecas) : "Não informado")</div>
+            <div class="db-kpi-hint">@(p.StockItem == null ? "Sem peça vinculada nesta OS" : "Preço de compra atual da peça")</div>
+        </div>
+        <div class="db-kpi">
+            <div class="db-kpi-label">Lucro realizado</div>
+            <div class="db-kpi-value @(Model.LucroRealizado < 0 ? "db-neg" : "")">@(Model.LucroRealizado.HasValue ? Fmt.Money(Model.LucroRealizado) : "—")</div>
+            <div class="db-kpi-hint">Recebido (@Fmt.Money(Model.RecebidoRealizado)) menos custo; pendentes não entram</div>
+        </div>
+    </div>
+
     @* Formulário de novo pagamento: atualiza a OS e cria o lançamento financeiro juntos. *@
     @if (p.Status != OrderStatus.Cancelled)
     {

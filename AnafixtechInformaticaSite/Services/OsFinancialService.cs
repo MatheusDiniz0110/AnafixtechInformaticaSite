@@ -93,6 +93,17 @@ namespace AnafixtechInformaticaSite.Services
         public int SugestoesCanceladas { get; set; }
     }
 
+    // Custo e lucro de uma OS. São APENAS cálculos para a tela: nunca viram
+    // FinancialEntry, nunca entram em total de caixa e nunca movimentam estoque.
+    public class ResultadoLucroOs
+    {
+        public int OsId { get; set; }
+        public decimal Recebido { get; set; }       // soma das entradas ligadas à OS
+        public decimal? CustoPecas { get; set; }    // nulo = custo não informado
+        public decimal? Lucro { get; set; }         // nulo quando não há custo conhecido
+        public bool CustoInformado => CustoPecas.HasValue;
+    }
+
     // ==========================================================================================
     // OsFinancialService — ÚNICA fonte de verdade do financeiro ligado a Ordens de Serviço.
     //
@@ -110,6 +121,9 @@ namespace AnafixtechInformaticaSite.Services
         // Serve para consertar algum evento perdido enquanto o Render estava hibernando,
         // sem criar sugestões para o histórico antigo em massa (isso é decisão explícita).
         private const int DiasReconciliacaoLeve = 30;
+
+        // Depois de quantos dias uma sugestão pendente ganha um aviso no sino.
+        private const int DiasLembrete = 3;
 
         private readonly AppDbContext _context;
 
@@ -606,6 +620,76 @@ namespace AnafixtechInformaticaSite.Services
             relatorio.SugestoesCanceladas = porStatus.FirstOrDefault(x => x.Status == SuggestionStatus.Cancelada)?.Total ?? 0;
 
             return relatorio;
+        }
+
+        // --------------------------------------------------------------------------------------
+        // Custo da peça vinculada à OS. SOMENTE LEITURA: usa o StockItemId que já existe
+        // e o PurchasePrice atual. Sem peça ou sem preço, devolve nulo (não é custo zero).
+        // --------------------------------------------------------------------------------------
+        public async Task<decimal?> CalcularCustoPecasDaOS(int osId, CancellationToken ct = default)
+        {
+            var idDaPeca = await _context.ServiceOrders.AsNoTracking()
+                .Where(o => o.Id == osId)
+                .Select(o => o.StockItemId)
+                .FirstOrDefaultAsync(ct);
+
+            if (idDaPeca == null) return null;
+
+            var preco = await _context.StockItems.AsNoTracking()
+                .Where(s => s.Id == idDaPeca.Value)
+                .Select(s => s.PurchasePrice)
+                .FirstOrDefaultAsync(ct);
+
+            return preco.HasValue ? Arredondar(preco.Value) : null;
+        }
+
+        // --------------------------------------------------------------------------------------
+        // Lucro realizado = entradas ligadas à OS − custo da peça. SOMENTE LEITURA.
+        // Sugestão pendente não é dinheiro recebido e não entra nesta conta.
+        // --------------------------------------------------------------------------------------
+        public async Task<ResultadoLucroOs> CalcularLucroDaOS(int osId, CancellationToken ct = default)
+        {
+            var recebido = Arredondar(await _context.FinancialEntries.AsNoTracking()
+                .Where(f => f.ServiceOrderId == osId && f.Tipo == EntryType.Entrada)
+                .SumAsync(f => (decimal?)f.Valor, ct) ?? 0m);
+
+            var custo = await CalcularCustoPecasDaOS(osId, ct);
+
+            return new ResultadoLucroOs
+            {
+                OsId = osId,
+                Recebido = recebido,
+                CustoPecas = custo,
+                Lucro = custo.HasValue ? Arredondar(recebido - custo.Value) : null
+            };
+        }
+
+        // --------------------------------------------------------------------------------------
+        // Lembrete de sugestões pendentes antigas. Compara a DATA SUGERIDA (estável, não muda
+        // quando o preço é recalculado) com hoje−dias. Só escreve no sino; não cria sugestão,
+        // não aprova nada e não grava FinancialEntry. A dedup de AvisarUmaVez garante um
+        // aviso por OS/título mesmo rodando toda vez que uma tela abre.
+        // --------------------------------------------------------------------------------------
+        public async Task AvisarSugestoesPendentesAntigasAsync(int dias = DiasLembrete,
+            CancellationToken ct = default)
+        {
+            if (dias < 1) dias = DiasLembrete;
+            var limite = Clock.Today.AddDays(-dias);
+
+            var antigas = await _context.FinancialSuggestions.AsNoTracking()
+                .Where(s => s.Status == SuggestionStatus.Pendente && s.DataSugerida <= limite)
+                .Select(s => new { s.ServiceOrderId, s.Valor })
+                .ToListAsync(ct);
+
+            foreach (var sugestao in antigas)
+            {
+                await AvisarUmaVez(NotificationType.Suggestion,
+                    $"Lembrete: OS-{sugestao.ServiceOrderId:D5} aguardando OK",
+                    $"A sugestão de {Fmt.Money(sugestao.Valor)} está pendente há {dias} dias. Revise, aprove ou ignore.",
+                    sugestao.ServiceOrderId, ct);
+            }
+
+            await _context.SaveChangesAsync(ct);
         }
 
         // --------------------------------------------------------------------------------------

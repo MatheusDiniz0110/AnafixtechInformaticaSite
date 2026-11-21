@@ -71,6 +71,9 @@ namespace AnafixtechInformaticaSite.Controllers
             // O Render hiberna: se alguma OS ficou concluída enquanto o site dormia,
             // esta reconciliação leve (idempotente) cria a sugestão que faltou.
             await _financeiro.ReconciliarRecentesAsync();
+            // Pendentes com 3 dias ou mais ganham um aviso no sino (uma vez só).
+            await _financeiro.AvisarSugestoesPendentesAntigasAsync();
+            await AtualizarContadorNaoLidas();
 
             var hoje = Clock.Today;                                   // data de hoje (Brasília)
             var agora = Clock.Now;                                    // data e hora de agora
@@ -296,6 +299,9 @@ namespace AnafixtechInformaticaSite.Controllers
 
             if (pedido == null) return NotFound(); // OS inexistente: erro 404
 
+            // Custo e lucro são cálculos somente leitura. Sugestão pendente não é recebido.
+            var resultadoLucro = await _financeiro.CalcularLucroDaOS(id);
+
             var vm = new PedidoDetalhesViewModel
             {
                 Pedido = pedido,
@@ -311,7 +317,10 @@ namespace AnafixtechInformaticaSite.Controllers
                     .Where(s => s.ServiceOrderId == id && s.Status != SuggestionStatus.Pendente)
                     .OrderByDescending(s => s.Id).Take(20).ToListAsync(),
                 // Lista de peças para o campo "peça usada".
-                Pecas = await _context.StockItems.AsNoTracking().OrderBy(s => s.Name).ToListAsync()
+                Pecas = await _context.StockItems.AsNoTracking().OrderBy(s => s.Name).ToListAsync(),
+                RecebidoRealizado = resultadoLucro.Recebido,
+                CustoPecas = resultadoLucro.CustoPecas,
+                LucroRealizado = resultadoLucro.Lucro
             };
             return View(vm);
         }
@@ -627,6 +636,8 @@ namespace AnafixtechInformaticaSite.Controllers
         {
             // Mesma reconciliação leve da Visão geral (segura para rodar toda vez que abre).
             await _financeiro.ReconciliarRecentesAsync();
+            await _financeiro.AvisarSugestoesPendentesAntigasAsync();
+            await AtualizarContadorNaoLidas();
 
             var hoje = Clock.Today;
 
@@ -1814,6 +1825,10 @@ namespace AnafixtechInformaticaSite.Controllers
         // Lista de notificações.  →  /Dashboard/Notificacoes
         public async Task<IActionResult> Notificacoes()
         {
+            // Quem vem direto ao sino também recebe o aviso das pendentes antigas.
+            await _financeiro.AvisarSugestoesPendentesAntigasAsync();
+            await AtualizarContadorNaoLidas();
+
             var vm = new NotificacoesViewModel
             {
                 Notificacoes = await _context.Notifications.AsNoTracking()
@@ -1962,6 +1977,13 @@ namespace AnafixtechInformaticaSite.Controllers
                 IsRead = false,
                 CreatedAt = Clock.Now
             });
+        }
+
+        // O filtro da action conta as não lidas ANTES dela. Se a action criou um lembrete,
+        // recalculamos aqui para o sino já aparecer certo nesta mesma resposta.
+        private async Task AtualizarContadorNaoLidas()
+        {
+            ViewBag.NaoLidas = await _context.Notifications.CountAsync(n => !n.IsRead);
         }
 
         // Guarda uma mensagem que aparece UMA vez na próxima tela (faixa verde de sucesso ou vermelha de erro).

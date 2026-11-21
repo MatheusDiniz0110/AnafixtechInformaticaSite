@@ -95,6 +95,9 @@ namespace AnafixtechInformaticaSite.Models.ViewModels
         public FinancialSuggestion? Sugestao { get; set; }               // sugestão aguardando o OK (no máximo uma)
         public List<FinancialSuggestion> HistoricoSugestoes { get; set; } = new(); // decisões já tomadas
         public List<StockItem> Pecas { get; set; } = new();              // peças para o campo "peça usada"
+        public decimal RecebidoRealizado { get; set; }                  // entradas ligadas à OS
+        public decimal? CustoPecas { get; set; }                        // nulo = custo não informado
+        public decimal? LucroRealizado { get; set; }                    // recebido menos custo
     }
 
     // =====================================================================
