@@ -237,6 +237,11 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Arquivos públicos de wwwroot (como /robots.txt) são servidos diretamente do disco,
+// antes do endpoint routing. Isso evita que uma action do MVC intercepte esses arquivos.
+app.UseStaticFiles();
+
 app.UseRouting();
 
 app.UseAuthentication();

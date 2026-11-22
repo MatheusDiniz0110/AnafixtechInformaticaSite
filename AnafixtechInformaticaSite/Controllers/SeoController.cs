@@ -1,16 +1,15 @@
 // =============================================================================================
-// SeoController — serve dois arquivos que TODO site público deveria ter:
+// SeoController — serve o /sitemap.xml, que lista as páginas que devem ser indexadas.
 //
-//   /robots.txt    → diz aos buscadores o que podem ou não visitar
-//   /sitemap.xml   → lista as páginas que devem ser indexadas
-//
-// Eles são gerados pelo próprio site (e não arquivos fixos) porque o endereço do domínio
+// O sitemap é gerado pelo próprio site (e não é arquivo fixo) porque o endereço do domínio
 // só é conhecido em tempo de execução. Assim funciona igual em localhost, no domínio atual
 // e em qualquer domínio futuro, sem precisar editar nada.
+//
+// O /robots.txt agora é um arquivo estático em wwwroot/robots.txt, servido pelo
+// app.UseStaticFiles() antes do routing; não deve haver action que capture essa rota.
 // =============================================================================================
 
 using Microsoft.AspNetCore.Mvc;
-using System.Text;
 using System.Xml.Linq;
 
 namespace AnafixtechInformaticaSite.Controllers
@@ -19,27 +18,6 @@ namespace AnafixtechInformaticaSite.Controllers
     {
         // Monta a base do site (ex.: https://anafixtech.com.br) a partir da requisição.
         private string UrlBase => $"{Request.Scheme}://{Request.Host}";
-
-        // -----------------------------------------------------------------------------------------
-        // /robots.txt
-        // -----------------------------------------------------------------------------------------
-        [HttpGet]
-        [Route("/robots.txt")]
-        [ResponseCache(Duration = 3600)] // pode ficar em cache por 1 hora
-        public IActionResult Robots()
-        {
-            var texto = new StringBuilder()
-                .AppendLine("User-agent: *")
-                .AppendLine("Allow: /")
-                // Áreas que não fazem sentido no Google e não devem ser rastreadas:
-                .AppendLine("Disallow: /Dashboard")
-                .AppendLine("Disallow: /Account")
-                .AppendLine()
-                .AppendLine($"Sitemap: {UrlBase}/sitemap.xml")
-                .ToString();
-
-            return Content(texto, "text/plain; charset=utf-8");
-        }
 
         // -----------------------------------------------------------------------------------------
         // /sitemap.xml
