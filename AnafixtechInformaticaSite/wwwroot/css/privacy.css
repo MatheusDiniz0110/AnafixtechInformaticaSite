@@ -309,6 +309,27 @@
     word-break: break-word;
 }
 
+/* Botão para revisar as preferências de cookies dentro da política. */
+.privacy-cookie-btn {
+    padding: .6rem 1rem;
+    font: inherit;
+    font-weight: 700;
+    color: var(--texto-principal);
+    background: var(--p-input);
+    border: 1px solid var(--borda-forte, #3a464d);
+    border-radius: var(--raio, 4px);
+    cursor: pointer;
+}
+
+.privacy-cookie-btn:hover {
+    border-color: var(--cobre-claro, #e0b072);
+}
+
+.privacy-cookie-btn:focus-visible {
+    outline: 2px solid var(--p-accent);
+    outline-offset: 3px;
+}
+
 /* ---------- Responsivo ---------- */
 @media (max-width: 900px) {
     .privacy-layout {

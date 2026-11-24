@@ -1,0 +1,120 @@
+@*
+    Política de Cancelamento, Trocas e Reembolso — AnaFixTech Informática.
+    Reaproveita o estilo da Política de Privacidade (css/privacy.css).
+*@
+@{
+    ViewData["Title"] = "Cancelamento, Trocas e Reembolso";
+    ViewData["Description"] = "Regras de cancelamento, garantia, trocas e reembolso dos serviços da AnaFixTech Informática em Anápolis.";
+
+    // ---- edite aqui ----
+    var atualizadoEm = new DateTime(2026, 11, 23);
+    var emailContato = "matheus.diniz.t@outlook.com";
+    var telefoneExibido = "(62) 99887-7833";
+    var prazoAnalise = "5 dias úteis";
+    var prazoEstorno = "5 a 10 dias úteis";
+    // --------------------
+
+    var dataTexto = atualizadoEm.ToString("d 'de' MMMM 'de' yyyy", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"));
+    var dataIso = atualizadoEm.ToString("yyyy-MM-dd");
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/privacy.css" asp-append-version="true" />
+}
+
+<div class="privacy">
+
+    <header class="privacy-hero">
+        <span class="privacy-eyebrow">Serviços com combinado claro</span>
+        <h1>Cancelamento, Trocas e Reembolso</h1>
+        <p class="privacy-lead">
+            Você recebe o diagnóstico e o valor antes de qualquer reparo. Se mudar de ideia,
+            explicamos aqui como cancelar, o que é devolvido e como pedir o estorno.
+        </p>
+        <p class="privacy-updated">Última atualização: <time datetime="@dataIso">@dataTexto</time></p>
+    </header>
+
+    <aside class="privacy-summary" aria-labelledby="resumo-titulo">
+        <h2 id="resumo-titulo">Resumo em poucas palavras</h2>
+        <ul>
+            <li><strong>Cancelar antes do diagnóstico não custa nada.</strong></li>
+            <li>Se você contratou pela internet, tem <strong>7 dias</strong> para desistir, conforme o CDC.</li>
+            <li>O reparo começa só depois que você aprova o valor.</li>
+            <li>Problema voltou em até <strong>90 dias</strong>? A gente olha de novo sem custo.</li>
+        </ul>
+    </aside>
+
+    <div class="privacy-content">
+
+        <section class="privacy-section" aria-labelledby="h-antes">
+            <h2 id="h-antes">1. Antes do diagnóstico</h2>
+            <p>
+                Você pode cancelar a solicitação a qualquer momento, sem custo, pelo WhatsApp ou e-mail.
+                Se ainda não houve deslocamento nem trabalho, devolvemos integralmente qualquer valor pago.
+            </p>
+        </section>
+
+        <section class="privacy-section" aria-labelledby="h-arrependimento">
+            <h2 id="h-arrependimento">2. Direito de arrependimento (7 dias)</h2>
+            <p>
+                Se você contratou o serviço pela internet, pode desistir em <strong>7 dias</strong>, contados da
+                data da contratação ou do ato de recebimento do serviço, conforme o art. 49 do Código de Defesa
+                do Consumidor. Basta avisar pelos canais de contato.
+            </p>
+            <p>
+                Se o serviço já tiver sido executado, devolvemos o que não foi efetivamente utilizado. Podem ser
+                descontados apenas valores já gastos com peças encomendadas a seu pedido e com trabalho realizado,
+                mediante comprovação.
+            </p>
+        </section>
+
+        <section class="privacy-section" aria-labelledby="h-orcamento">
+            <h2 id="h-orcamento">3. Orçamento não aprovado</h2>
+            <p>
+                Você recebe o diagnóstico e o valor antes de qualquer reparo. Se não aprovar, o equipamento é
+                devolvido sem cobrança de mão de obra.
+                @* Se passar a existir taxa de diagnóstico ou visita, informe aqui o valor e quando ela é cobrada. *@
+            </p>
+        </section>
+
+        <section class="privacy-section" aria-labelledby="h-garantia">
+            <h2 id="h-garantia">4. Serviço executado e garantia</h2>
+            <p>
+                Se o problema voltar em até <strong>90 dias</strong>, fale com a gente: reexaminamos sem custo.
+                Se não for possível resolver, analisamos o reembolso do valor pago pelo serviço. Peças trocadas
+                seguem a garantia do fabricante ou do fornecedor, quando aplicável.
+            </p>
+        </section>
+
+        <section class="privacy-section" aria-labelledby="h-como">
+            <h2 id="h-como">5. Como pedir o reembolso</h2>
+            <p>
+                Envie um e-mail ou mensagem com seu nome, o protocolo do pedido e a forma de pagamento.
+                Analisamos em até <strong>@prazoAnalise</strong>. Se aprovado, o estorno é feito em até
+                <strong>@prazoEstorno</strong>, pela mesma forma de pagamento.
+            </p>
+        </section>
+
+        <section class="privacy-section" aria-labelledby="h-duvidas">
+            <h2 id="h-duvidas">6. Dúvidas</h2>
+            <p>
+                Fale com a gente antes de qualquer coisa: preferimos resolver direto. Se não resolvermos,
+                você pode procurar o Procon ou os órgãos de defesa do consumidor.
+            </p>
+            <p>
+                O uso do site também está sujeito aos <a asp-controller="Home" asp-action="Terms">Termos de Uso</a>
+                e à <a asp-controller="Home" asp-action="Privacy">Política de Privacidade</a>.
+            </p>
+        </section>
+
+        <section class="privacy-section privacy-contact" aria-labelledby="h-contato">
+            <h2 id="h-contato">7. Contato</h2>
+            <ul class="privacy-contact-list">
+                <li><span>Responsável</span><strong>Matheus Diniz Tereza — AnaFixTech Informática</strong></li>
+                <li><span>E-mail</span><a href="mailto:@emailContato">@emailContato</a></li>
+                <li><span>WhatsApp</span><a href="https://wa.me/5562998877833" target="_blank" rel="noopener noreferrer">@telefoneExibido</a></li>
+            </ul>
+        </section>
+
+    </div>
+</div>

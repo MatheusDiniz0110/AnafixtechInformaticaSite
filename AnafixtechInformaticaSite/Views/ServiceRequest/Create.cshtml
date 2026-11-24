@@ -98,22 +98,24 @@
                         <label asp-for="Photo"></label>
                         <input asp-for="Photo" type="file" class="sr-input sr-file"
                                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
-                        <span class="sr-hint">JPG, PNG ou WEBP, até 5 MB. Serve para adiantar o diagnóstico.</span>
+                        <span class="sr-hint">JPG, PNG ou WEBP, até 5 MB. Ajuda no diagnóstico. Evite imagens com dados de outras pessoas.</span>
                         <span asp-validation-for="Photo" class="sr-error"></span>
                     </div>
                 </div>
 
                 <label class="sr-check sr-check--terms">
                     <input asp-for="AcceptPrivacy" />
-                    Autorizo o contato e o uso destes dados para o atendimento da minha solicitação.
+                    Li e concordo com a <a asp-controller="Home" asp-action="Privacy">Política de Privacidade</a>
+                    e autorizo a AnaFixTech a usar meus dados para entrar em contato e atender esta solicitação.
                 </label>
                 <span asp-validation-for="AcceptPrivacy" class="sr-error"></span>
 
                 <button type="submit" class="sr-btn">Enviar solicitação</button>
 
                 <p class="sr-note">
-                    Ao enviar, você recebe um protocolo para acompanhar o atendimento.
-                    Os dados não são compartilhados com terceiros.
+                    Ao enviar, você recebe um protocolo para acompanhar o atendimento. Seus dados são usados
+                    apenas para este atendimento: não os vendemos nem usamos para publicidade. Você pode pedir
+                    acesso ou exclusão quando quiser. O valor é confirmado antes de qualquer reparo.
                 </p>
             </form>
         </div>

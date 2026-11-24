@@ -1,6 +1,12 @@
 @{
     var ano = DateTime.Now.Year;
     var zap = "https://wa.me/5562998877833?text=" + Uri.EscapeDataString("Olá! Preciso de um orçamento para meu equipamento.");
+
+    // Identificação do fornecedor exigida pelo Decreto do E-commerce (7.962/2013).
+    // Vazios até você ter CNPJ/CPF e endereço: os blocos aparecem quando preenchidos.
+    var cnpjCpf = "";
+    var enderecoCompleto = "";
+    bool TemValor(string? valor) => !string.IsNullOrWhiteSpace(valor);
 }
 
 <footer class="site-footer" aria-label="Rodapé do site">
@@ -46,9 +52,18 @@
             </ul>
 
             <p class="site-footer__local">
+                Responsável: Matheus Diniz Tereza<br />
                 Anápolis, Goiás<br />
                 @* TODO: preencher com o endereço real da bancada e o horário de atendimento. *@
                 Endereço e horário confirmados pelo WhatsApp.
+                @if (TemValor(cnpjCpf))
+                {
+                    <span>CNPJ/CPF: @cnpjCpf<br /></span>
+                }
+                @if (TemValor(enderecoCompleto))
+                {
+                    <span>@enderecoCompleto<br /></span>
+                }
             </p>
         </address>
     </div>
@@ -59,7 +74,11 @@
             <p>
                 <a asp-controller="Home" asp-action="Privacy">Política de Privacidade</a>
                 <span aria-hidden="true">·</span>
-                Site feito por <a href="https://github.com/MatheusDiniz0110" target="_blank" rel="noopener noreferrer">Matheus Diniz Tereza</a>
+                <a asp-controller="Home" asp-action="Terms">Termos de Uso</a>
+                <span aria-hidden="true">·</span>
+                <a asp-controller="Home" asp-action="Refund">Cancelamento e Reembolso</a>
+                <span aria-hidden="true">·</span>
+                <button type="button" class="site-footer__link-button" data-cookie-action="configure">Preferências de cookies</button>
                 <span aria-hidden="true">·</span>
                 <a href="#topo">Voltar ao topo</a>
             </p>

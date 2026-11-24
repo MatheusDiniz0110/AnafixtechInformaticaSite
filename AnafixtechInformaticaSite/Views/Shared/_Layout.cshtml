@@ -32,6 +32,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/footer.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/cookie-banner.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/AnafixtechInformaticaSite.styles.css" asp-append-version="true" />
 
     @await RenderSectionAsync("Head", required: false)
@@ -130,6 +131,7 @@
 </div>
 
 <partial name="_Footer" />
+<partial name="_CookieBanner" />
 
 <a class="whats-fixo" href="@zap" target="_blank" rel="noopener noreferrer" aria-label="Falar no WhatsApp com a AnaFixTech">
     <svg aria-hidden="true"><use href="#icone-whatsapp"></use></svg>
@@ -139,6 +141,7 @@
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
+<script src="~/js/cookie-banner.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

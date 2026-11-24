@@ -25,6 +25,27 @@
     outline-offset: 3px;
 }
 
+/* Botão do rodapé que abre as preferências de cookies (para parecer um link). */
+.site-footer__link-button {
+    padding: 0;
+    font: inherit;
+    color: var(--texto-suave);
+    background: none;
+    border: 0;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.site-footer__link-button:hover {
+    color: var(--cobre-claro);
+    text-decoration: underline;
+}
+
+.site-footer__link-button:focus-visible {
+    outline: 2px solid var(--cobre-claro);
+    outline-offset: 3px;
+}
+
 .site-footer__inner {
     display: grid;
     grid-template-columns: 1.5fr .85fr .85fr 1.1fr;

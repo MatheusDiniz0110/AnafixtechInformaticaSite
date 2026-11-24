@@ -27,6 +27,11 @@ namespace AnafixtechInformaticaSite.Controllers
 
         public IActionResult Privacy() => View();
 
+        // Páginas de adequação legal (LGPD / CDC / Marco Civil).
+        public IActionResult Terms() => View();
+
+        public IActionResult Refund() => View();
+
         public IActionResult Sobre()
         {
             return View();

@@ -1,0 +1,75 @@
+@*
+    Aviso de cookies — essenciais sempre ativos; analítica e publicidade desligadas por padrão.
+    A preferência fica no localStorage do navegador (não é cookie) e pode ser revisada
+    pelo link no rodapé ou pelo botão na Política de Privacidade.
+*@
+@{
+    var detalhesUrl = Url.Action("Privacy", "Home") + "#cookies";
+}
+
+<div id="cookie-banner" class="cookie-banner" role="region" aria-label="Aviso sobre cookies" hidden>
+    <div class="cookie-banner__caixa">
+        <div class="cookie-banner__texto">
+            <h2>Privacidade e cookies</h2>
+            <p>
+                Usamos apenas cookies essenciais para manter seu login e proteger nossos formulários.
+                Não usamos publicidade nem rastreamento. Você pode aceitar, recusar os não essenciais
+                ou escolher o que prefere. <a href="@detalhesUrl">Saiba mais</a>.
+            </p>
+        </div>
+        <div class="cookie-banner__acoes">
+            <button type="button" class="cookie-btn cookie-btn--primario" data-cookie-action="accept">Aceitar todos</button>
+            <button type="button" class="cookie-btn" data-cookie-action="reject">Recusar não essenciais</button>
+            <button type="button" class="cookie-btn cookie-btn--link" data-cookie-action="configure">Configurar</button>
+        </div>
+    </div>
+</div>
+
+<div id="cookie-modal" class="cookie-modal" role="dialog" aria-modal="true" aria-labelledby="cookie-modal-titulo" hidden>
+    <div class="cookie-modal__caixa">
+        <h2 id="cookie-modal-titulo">Preferências de cookies</h2>
+        <p>
+            Escolha o que permite. Os cookies essenciais continuam ativos porque sem eles o login e
+            os formulários não funcionam. Nada aqui é enviado para a gente: a escolha fica no seu navegador.
+        </p>
+
+        <ul class="cookie-modal__lista">
+            <li>
+                <div>
+                    <strong>Essenciais</strong>
+                    <span>Login, segurança e proteção contra formulários forjados.</span>
+                </div>
+                <label class="cookie-switch">
+                    <input type="checkbox" checked disabled aria-label="Cookies essenciais, sempre ativos" />
+                    <span>Sempre ativos</span>
+                </label>
+            </li>
+            <li>
+                <div>
+                    <strong>Análise</strong>
+                    <span>Nos ajuda a entender quais páginas são mais acessadas.</span>
+                </div>
+                <label class="cookie-switch">
+                    <input type="checkbox" id="cookie-analytics" />
+                    <span>Permitir</span>
+                </label>
+            </li>
+            <li>
+                <div>
+                    <strong>Publicidade</strong>
+                    <span>Hoje não utilizamos. Se um dia usarmos, pediremos autorização.</span>
+                </div>
+                <label class="cookie-switch">
+                    <input type="checkbox" id="cookie-ads" />
+                    <span>Permitir</span>
+                </label>
+            </li>
+        </ul>
+
+        <div class="cookie-modal__acoes">
+            <button type="button" class="cookie-btn cookie-btn--primario" data-cookie-action="save">Salvar minhas preferências</button>
+            <button type="button" class="cookie-btn" data-cookie-action="reject">Recusar não essenciais</button>
+            <button type="button" class="cookie-btn cookie-btn--link" data-cookie-action="close">Fechar</button>
+        </div>
+    </div>
+</div>

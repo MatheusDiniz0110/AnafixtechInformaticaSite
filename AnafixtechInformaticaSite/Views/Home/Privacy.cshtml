@@ -8,11 +8,20 @@
     ViewData["Description"] = "Política de Privacidade da AnaFixTech Informática: dados coletados, finalidade, cookies essenciais, segurança e direitos previstos na LGPD.";
 
     // ---- edite aqui ----
-    var atualizadoEm = new DateTime(2026, 10, 31);
+    var atualizadoEm = new DateTime(2026, 11, 23);
     var emailContato = "matheus.diniz.t@outlook.com";
     var telefoneExibido = "(62) 99887-7833";
     var whatsappNumero = "5562998877833";
+    var responsavel = "Matheus Diniz Tereza";
+
+    // Identificação exigida pelo Decreto do E-commerce (Decreto 7.962/2013).
+    // Estão vazios porque a empresa ainda não tem CNPJ/CPF nem endereço físico informado.
+    // Preencha aqui quando tiver: os blocos correspondentes aparecem sozinhos na página.
+    var cnpjCpf = "";
+    var enderecoCompleto = "";
     // --------------------
+
+    bool TemValor(string? valor) => !string.IsNullOrWhiteSpace(valor);
 
     var dataTexto = atualizadoEm.ToString("d 'de' MMMM 'de' yyyy", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"));
     var dataIso = atualizadoEm.ToString("yyyy-MM-dd");
@@ -69,13 +78,23 @@
             <section id="quem-somos" class="privacy-section" aria-labelledby="h-quem-somos">
                 <h2 id="h-quem-somos">Quem somos</h2>
                 <p>
-                    A <strong>AnaFixTech Informática</strong> é uma empresa de assistência técnica e serviços de TI com sede em
-                    <strong>Anápolis, Goiás</strong>, conduzida por <strong>Matheus Diniz Tereza</strong>. Para a LGPD, somos a
-                    <strong>controladora</strong> dos dados pessoais tratados neste site: decidimos como e por que eles são usados.
+                    A <strong>AnaFixTech Informática</strong> é um serviço de assistência técnica e suporte de TI que atende em
+                    <strong>Anápolis, Goiás</strong>, conduzido por <strong>@responsavel</strong>. Para a LGPD, somos o
+                    <strong>controlador</strong> dos dados pessoais tratados neste site: decidimos como e por que eles são usados.
                 </p>
+                @if (TemValor(cnpjCpf))
+                {
+                    <p><strong>CNPJ/CPF:</strong> @cnpjCpf</p>
+                }
+                @if (TemValor(enderecoCompleto))
+                {
+                    <p><strong>Endereço:</strong> @enderecoCompleto</p>
+                }
                 <p>
-                    Os assuntos de privacidade são atendidos diretamente pelo responsável, pelos canais da seção
-                    <a href="#contato">Contato</a>.
+                    Os assuntos de privacidade são atendidos pelo responsável @responsavel, pelos canais da seção
+                    <a href="#contato">Contato</a>. Também estão disponíveis os
+                    <a asp-controller="Home" asp-action="Terms">Termos de Uso</a> e a
+                    <a asp-controller="Home" asp-action="Refund">Política de Cancelamento e Reembolso</a>.
                 </p>
             </section>
 
@@ -146,6 +165,7 @@
                             <tr><td>Cumprir obrigações legais e fiscais</td><td>Cumprimento de obrigação legal (inciso II)</td></tr>
                             <tr><td>Defender direitos em eventual disputa</td><td>Exercício regular de direitos (inciso VI)</td></tr>
                             <tr><td>Enviar novidades e promoções, se algum dia o fizermos</td><td>Consentimento (inciso I), que você pode retirar quando quiser</td></tr>
+                            <tr><td>Guardar sua escolha sobre cookies não essenciais</td><td>Consentimento (inciso I), registrado no seu navegador</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -178,7 +198,15 @@
                 <p>
                     No momento, <strong>não usamos</strong> cookies de publicidade, de análise de audiência ou de rastreamento.
                     Você pode apagar os cookies pelo navegador a qualquer momento, mas, sem o cookie de login,
-                    será preciso entrar de novo a cada visita. Se um dia adotarmos outras ferramentas, esta política será atualizada.
+                    será preciso entrar de novo a cada visita. Se um dia adotarmos outras ferramentas, esta política será atualizada
+                    e pediremos seu consentimento antes de carregá-las.
+                </p>
+                <p>
+                    Sua escolha no aviso de cookies fica guardada apenas no seu navegador (armazenamento local) com a data da decisão.
+                    Para revisá-la, use o botão abaixo ou o link “Preferências de cookies” no rodapé.
+                </p>
+                <p>
+                    <button type="button" class="privacy-cookie-btn" id="abrir-preferencias-cookies" data-cookie-action="configure">Revisar preferências de cookies</button>
                 </p>
             </section>
 
@@ -186,39 +214,49 @@
                 <h2 id="h-compartilhamento">Com quem compartilhamos</h2>
                 <p><strong>Não vendemos seus dados pessoais.</strong> Eles só são compartilhados quando necessário:</p>
                 <ul>
-                    <li><strong>Hospedagem e infraestrutura:</strong> serviços que mantêm o site e o banco de dados no ar.</li>
+                    <li><strong>Render:</strong> hospeda o site e o banco de dados, onde ficam contas e solicitações.</li>
                     <li><strong>Serviços de mensagens:</strong> como o WhatsApp (Meta), quando você nos contata ou conversamos por ele.</li>
-                    <li><strong>Recursos de terceiros carregados pelo site:</strong> as fontes tipográficas são entregues pelo Google Fonts, que pode receber o seu endereço IP.</li>
+                    <li><strong>Google Fonts:</strong> entrega as fontes do site e pode receber o seu endereço IP.</li>
                     <li><strong>Autoridades públicas:</strong> quando exigido por lei ou ordem judicial.</li>
                 </ul>
                 <p>
-                    Alguns desses provedores podem tratar dados fora do Brasil; nesses casos, observamos as garantias previstas na LGPD.
-                    Os sites que ligamos a partir daqui (WhatsApp, Instagram, GitHub, LinkedIn) têm políticas de privacidade próprias.
+                    O Render e o Google podem tratar dados fora do Brasil. Nesses casos, limitamos as informações enviadas ao
+                    necessário e exigimos garantias contratuais adequadas, observando a LGPD. Os sites que ligamos a partir daqui
+                    (WhatsApp, Instagram, GitHub) têm políticas de privacidade próprias.
                 </p>
             </section>
 
             <section id="retencao" class="privacy-section" aria-labelledby="h-retencao">
                 <h2 id="h-retencao">Por quanto tempo guardamos</h2>
                 <p>Guardamos os dados somente pelo tempo necessário para cumprir as finalidades acima:</p>
-                <ul>
-                    <li><strong>Conta:</strong> enquanto ela estiver ativa. Você pode pedir a exclusão a qualquer momento.</li>
-                    <li><strong>Pedidos de serviço:</strong> durante o atendimento, o período de garantia e o prazo exigido por obrigações legais, fiscais e de defesa de direitos.</li>
-                    <li><strong>Registros técnicos:</strong> pelo prazo necessário à segurança e à solução de problemas.</li>
-                </ul>
+
+                <div class="privacy-table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th scope="col">Dado</th><th scope="col">Prazo</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Conta</td><td>Enquanto estiver ativa; após a exclusão, até 90 dias em backups de segurança</td></tr>
+                            <tr><td>Solicitações e ordens de serviço</td><td>5 anos após a conclusão (prazo fiscal e de defesa de direitos)</td></tr>
+                            <tr><td>Fotos enviadas no formulário</td><td>Durante o atendimento e o período da garantia de 90 dias</td></tr>
+                            <tr><td>Registros de acesso (IP, navegador, data/hora)</td><td>6 meses, conforme o Marco Civil da Internet</td></tr>
+                            <tr><td>Escolha de cookies não essenciais</td><td>12 meses no navegador</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
                 <p>Terminado o prazo, eliminamos ou anonimizamos os dados, salvo se a lei exigir a guarda.</p>
             </section>
 
             <section id="seguranca" class="privacy-section" aria-labelledby="h-seguranca">
                 <h2 id="h-seguranca">Como protegemos seus dados</h2>
-                @*
-                    Quando a senha passar a ser guardada com hash (PasswordHasher), acrescente a linha:
-                    <li>Senhas armazenadas de forma protegida (hash), nunca em texto legível.</li>
-                *@
                 <p>Adotamos medidas técnicas e administrativas para proteger os dados contra acesso não autorizado, perda e alteração, como:</p>
                 <ul>
-                    <li>Autenticação por token assinado, em cookie protegido (HttpOnly e Secure).</li>
+                    <li>Senhas armazenadas de forma protegida (hash), nunca em texto legível.</li>
+                    <li>Autenticação por token assinado, em cookie protegido (HttpOnly, Secure e SameSite=Strict).</li>
                     <li>Proteção contra requisições forjadas (CSRF) em todos os formulários.</li>
                     <li>Acesso ao banco de dados e ao painel restrito a pessoas autorizadas, com credenciais próprias.</li>
+                    <li>Conexão criptografada (HTTPS) em toda a navegação.</li>
                 </ul>
                 <p>
                     Nenhum sistema é totalmente imune a falhas. Se ocorrer um incidente que possa causar risco ou dano relevante,
@@ -268,11 +306,23 @@
                 <h2 id="h-contato">Contato</h2>
                 <p>Dúvidas sobre esta política ou pedidos sobre seus dados? Fale com o responsável:</p>
                 <ul class="privacy-contact-list">
-                    <li><span>Responsável</span><strong>Matheus Diniz Tereza — AnaFixTech Informática</strong></li>
+                    <li><span>Responsável / encarregado de dados</span><strong>@responsavel — AnaFixTech Informática</strong></li>
                     <li><span>E-mail</span><a href="mailto:@emailContato">@emailContato</a></li>
                     <li><span>WhatsApp</span><a href="https://wa.me/@whatsappNumero" target="_blank" rel="noopener noreferrer">@telefoneExibido</a></li>
                     <li><span>Localização</span><strong>Anápolis — Goiás, Brasil</strong></li>
+                    @if (TemValor(cnpjCpf))
+                    {
+                        <li><span>CNPJ/CPF</span><strong>@cnpjCpf</strong></li>
+                    }
+                    @if (TemValor(enderecoCompleto))
+                    {
+                        <li><span>Endereço</span><strong>@enderecoCompleto</strong></li>
+                    }
                 </ul>
+                <p>
+                    Também publicamos nossos <a asp-controller="Home" asp-action="Terms">Termos de Uso</a> e a
+                    <a asp-controller="Home" asp-action="Refund">Política de Cancelamento, Trocas e Reembolso</a>.
+                </p>
             </section>
 
         </div>

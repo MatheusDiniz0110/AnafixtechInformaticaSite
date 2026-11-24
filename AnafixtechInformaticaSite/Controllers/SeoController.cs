@@ -36,7 +36,9 @@ namespace AnafixtechInformaticaSite.Controllers
                 "/Home/Sobre",             // sobre a empresa
                 "/Home/Forum",             // dúvidas frequentes
                 "/ServiceRequest/Acompanhar", // consulta de protocolo
-                "/Home/Privacy"            // política de privacidade
+                "/Home/Privacy",           // política de privacidade
+                "/Home/Terms",             // termos de uso
+                "/Home/Refund"             // cancelamento, trocas e reembolso
             };
 
             XNamespace ns = "http://www.sitemaps.org/schemas/sitemap/0.9";

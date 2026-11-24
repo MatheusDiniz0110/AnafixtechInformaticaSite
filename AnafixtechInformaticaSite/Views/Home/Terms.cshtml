@@ -1,0 +1,150 @@
+@*
+    Termos de Uso — AnaFixTech Informática.
+    Reaproveita o estilo da Política de Privacidade (css/privacy.css).
+*@
+@{
+    ViewData["Title"] = "Termos de Uso";
+    ViewData["Description"] = "Termos de Uso do site da AnaFixTech Informática: regras de uso, propriedade intelectual, garantia e responsabilidade.";
+
+    // ---- edite aqui ----
+    var atualizadoEm = new DateTime(2026, 11, 23);
+    var emailContato = "matheus.diniz.t@outlook.com";
+    var telefoneExibido = "(62) 99887-7833";
+    // --------------------
+
+    var dataTexto = atualizadoEm.ToString("d 'de' MMMM 'de' yyyy", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"));
+    var dataIso = atualizadoEm.ToString("yyyy-MM-dd");
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/privacy.css" asp-append-version="true" />
+}
+
+<div class="privacy">
+
+    <header class="privacy-hero">
+        <span class="privacy-eyebrow">Regras de uso do site</span>
+        <h1>Termos de Uso</h1>
+        <p class="privacy-lead">
+            Aqui estão as regras para usar o site da AnaFixTech Informática. Elas existem para deixar
+            claro o que oferecemos, o que esperamos de quem usa e como cuidamos do nosso conteúdo.
+        </p>
+        <p class="privacy-updated">Última atualização: <time datetime="@dataIso">@dataTexto</time></p>
+    </header>
+
+    <aside class="privacy-summary" aria-labelledby="resumo-titulo">
+        <h2 id="resumo-titulo">Resumo em poucas palavras</h2>
+        <ul>
+            <li>Você pede um orçamento; <strong>o valor só é fechado depois do diagnóstico</strong>.</li>
+            <li>O reparo <strong>só começa após sua autorização</strong>.</li>
+            <li>Nossos textos, marca e layout são protegidos — não podem ser copiados sem permissão.</li>
+            <li>Nada aqui tira os direitos que o Código de Defesa do Consumidor garante a você.</li>
+        </ul>
+    </aside>
+
+    <div class="privacy-content">
+
+        <section class="privacy-section" aria-labelledby="h-aceite">
+            <h2 id="h-aceite">1. Aceite</h2>
+            <p>
+                Ao navegar, criar uma conta ou enviar um pedido, você concorda com estes Termos e com a
+                <a asp-controller="Home" asp-action="Privacy">Política de Privacidade</a>.
+                Se não concordar, não use o site.
+            </p>
+        </section>
+
+        <section class="privacy-section" aria-labelledby="h-servicos">
+            <h2 id="h-servicos">2. O que o site oferece</h2>
+            <p>
+                Mostramos serviços de assistência técnica, permitimos pedir orçamento e acompanhar solicitações.
+                As informações de preço e prazo do catálogo são <strong>indicativas</strong>: o valor definitivo
+                é informado depois da avaliação do equipamento, e o reparo começa somente com a sua autorização.
+            </p>
+            <p>
+                Não vendemos produtos nem realizamos pagamentos online pelo site. Formas de pagamento e eventuais
+                taxas são combinadas diretamente com você no atendimento.
+            </p>
+        </section>
+
+        <section class="privacy-section" aria-labelledby="h-conta">
+            <h2 id="h-conta">3. Sua conta</h2>
+            <p>
+                Você é responsável por manter seu login e sua senha em segredo. Se desconfiar de uso indevido,
+                avise imediatamente pelos canais de contato. Podemos suspender contas usadas para fraude, spam,
+                envio automatizado ou tentativa de acesso a áreas restritas.
+            </p>
+        </section>
+
+        <section class="privacy-section" aria-labelledby="h-propriedade">
+            <h2 id="h-propriedade">4. Propriedade intelectual</h2>
+            <p>
+                Marca, logotipo, textos, fotos, ícones, layout e código deste site pertencem à AnaFixTech
+                Informática ou a terceiros autorizados. É proibido copiar, reproduzir, distribuir ou criar
+                obras derivadas sem autorização escrita.
+            </p>
+            <p>
+                Você continua sendo dono dos arquivos e dos dados do seu equipamento. Autoriza a AnaFixTech
+                a tratá-los apenas na medida necessária para o diagnóstico, o reparo e o cumprimento da garantia.
+            </p>
+        </section>
+
+        <section class="privacy-section" aria-labelledby="h-uso">
+            <h2 id="h-uso">5. Uso adequado</h2>
+            <p>Não é permitido:</p>
+            <ul>
+                <li>informar dados falsos ou de outras pessoas;</li>
+                <li>tentar invadir, testar ou sobrecarregar o sistema;</li>
+                <li>automatizar envios ou usar o site para publicidade não autorizada;</li>
+                <li>violar direitos de terceiros ou a lei.</li>
+            </ul>
+        </section>
+
+        <section class="privacy-section" aria-labelledby="h-links">
+            <h2 id="h-links">6. Links externos</h2>
+            <p>
+                Links para WhatsApp, Instagram, GitHub e outros sites levam a páginas com regras próprias.
+                Não respondemos pelo conteúdo nem pela privacidade desses sites.
+            </p>
+        </section>
+
+        <section class="privacy-section" aria-labelledby="h-garantia">
+            <h2 id="h-garantia">7. Garantia e responsabilidade</h2>
+            <p>
+                Os serviços têm <strong>90 dias de garantia</strong> para o problema identificado no atendimento.
+                Regras de cancelamento e reembolso estão na
+                <a asp-controller="Home" asp-action="Refund">Política de Cancelamento, Trocas e Reembolso</a>.
+            </p>
+            <p>
+                Nos limites permitidos pela lei, não respondemos por lucros cessantes, perdas indiretas ou por
+                dados que você não tenha backupeado. Nada nestes Termos retira direitos que o Código de Defesa
+                do Consumidor garante a você.
+            </p>
+        </section>
+
+        <section class="privacy-section" aria-labelledby="h-alteracoes">
+            <h2 id="h-alteracoes">8. Alterações</h2>
+            <p>
+                Podemos atualizar estes Termos para refletir mudanças no site ou na lei. A versão em vigor é
+                sempre esta página, com a data de atualização no topo.
+            </p>
+        </section>
+
+        <section class="privacy-section" aria-labelledby="h-lei">
+            <h2 id="h-lei">9. Lei aplicável e foro</h2>
+            <p>
+                Aplica-se a lei brasileira. Fica eleito o foro de Anápolis-GO para resolver eventuais disputas,
+                sem prejuízo do direito do consumidor de ajuizar a ação no domicílio dele.
+            </p>
+        </section>
+
+        <section class="privacy-section privacy-contact" aria-labelledby="h-contato">
+            <h2 id="h-contato">10. Contato</h2>
+            <ul class="privacy-contact-list">
+                <li><span>Responsável</span><strong>Matheus Diniz Tereza — AnaFixTech Informática</strong></li>
+                <li><span>E-mail</span><a href="mailto:@emailContato">@emailContato</a></li>
+                <li><span>WhatsApp</span><a href="https://wa.me/5562998877833" target="_blank" rel="noopener noreferrer">@telefoneExibido</a></li>
+            </ul>
+        </section>
+
+    </div>
+</div>
