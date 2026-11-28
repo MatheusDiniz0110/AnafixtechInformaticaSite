@@ -1,0 +1,39 @@
+# =============================================================================================
+# CI — compila e roda os testes em todo push/PR para a master.
+#
+# O Render faz deploy automático a cada commit na master. Para os testes realmente barrarem
+# um deploy ruim, ative no GitHub:
+#   Settings > Branches > Add branch protection rule > master
+#   > Require status checks to pass before merging > selecione "build-e-testes".
+#
+# Sem essa proteção, o workflow avisa do erro, mas o Render já pode ter iniciado o deploy.
+# =============================================================================================
+name: build-e-testes
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build-e-testes:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Instalar o .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restaurar pacotes
+        run: dotnet restore AnafixtechInformaticaSite.slnx
+
+      - name: Compilar
+        run: dotnet build AnafixtechInformaticaSite.slnx --no-restore -c Release
+
+      - name: Rodar os testes
+        run: dotnet test AnafixtechInformaticaSite.slnx --no-build -c Release --logger "console;verbosity=normal"

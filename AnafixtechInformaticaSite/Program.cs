@@ -238,8 +238,12 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Arquivos públicos de wwwroot (como /robots.txt) são servidos diretamente do disco,
-// antes do endpoint routing. Isso evita que uma action do MVC intercepte esses arquivos.
+// Arquivos públicos de wwwroot (CSS, imagens, JS e o HTML de verificação do Google) são
+// servidos diretamente do disco, antes do endpoint routing.
+//
+// IMPORTANTE: /robots.txt e /sitemap.xml NÃO ficam mais em wwwroot. Eles são gerados pelo
+// SeoController, porque um arquivo estático venceria a action e passaria a ser a fonte da
+// verdade sem ninguém perceber (foi o que aconteceu com o sitemap.xml).
 app.UseStaticFiles();
 
 app.UseRouting();
@@ -249,10 +253,27 @@ app.UseAuthorization();
 
 app.MapStaticAssets();
 
+// ---------------------------------------------------------------------------------------------
+// /health — endpoint leve, sem banco, usado pelo health check do Render e pelo ping externo
+// que mantém o serviço Free acordado (ver DEPLOY.md, seção "SEO").
+//
+// Ele NÃO prova que o banco está bom; serve só para saber que o processo está no ar e
+// respondendo. As rotas que usam banco continuam falhando normalmente se o PostgreSQL cair.
+// ---------------------------------------------------------------------------------------------
+app.MapGet("/health", (HttpContext contexto) =>
+{
+    contexto.Response.Headers.CacheControl = "no-store";
+    return Results.Text("ok", "text/plain; charset=utf-8");
+});
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 app.Run();
+
+// Necessário para os testes de integração (WebApplicationFactory<Program>) conseguirem
+// enxergar a classe gerada pelas top-level statements deste arquivo.
+public partial class Program { }
 

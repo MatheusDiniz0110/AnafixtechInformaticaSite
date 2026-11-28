@@ -116,7 +116,7 @@ Se preferir criar o serviço na mão:
 | Dockerfile Path | `AnafixtechInformaticaSite/Dockerfile` |
 | Root Directory | vazio (raiz do repositório) |
 | Instance Type | Free (ou pago) |
-| Health Check Path | `/` |
+| Health Check Path | `/health` |
 
 Variáveis de ambiente:
 
@@ -138,7 +138,8 @@ conexão pela rede interna.
 - **Plano Free do Postgres expira 30 dias após a criação** e os dados são apagados. Para uso
   contínuo, mude o banco para um plano pago.
 - **Web Service Free hiberna** após 15 minutos sem acesso. A primeira requisição seguinte
-  demora cerca de um minuto.
+  demora cerca de um minuto. Enquanto ele dorme, o Render responde `/robots.txt` com
+  `Disallow: /` por conta própria — leia a **seção 9** antes de divulgar o site.
 - **Uploads são efêmeros**: as fotos de `wwwroot/uploads/requests` somem a cada deploy,
   restart ou hibernação. O `Dockerfile` cria essa pasta já com permissão de escrita para o
   usuário do contêiner (senão o envio de foto falharia), mas para manter as fotos é preciso
@@ -313,3 +314,116 @@ dotnet build AnafixtechInformaticaSite.slnx
 dotnet test AnafixtechInformaticaSite.slnx
 ```
 Os testes novos cobrem custo informado, custo ausente (sem preço e sem peça), lucro sobre recebido, sugestão pendente fora do recebido até a aprovação, lembrete aos 3 dias, ausência de lembrete antes disso, deduplicação, exposição do cálculo no detalhe da OS, atualização do contador do sino e ausência de dados pessoais no aviso. Nenhuma variável de ambiente ou configuração do Render foi alterada por esta fase.
+
+## 9. SEO: robots.txt, sitemap.xml e /health
+
+### Como o SEO é servido
+
+- `/robots.txt` e `/sitemap.xml` são gerados pelo `SeoController`, **não** são arquivos em
+  `wwwroot`. Um arquivo estático venceria a action (o `UseStaticFiles` roda antes do routing)
+  e passaria a ser a fonte da verdade sem ninguém perceber. Foi o que aconteceu com o
+  `sitemap.xml` estático: ele escondia o sitemap gerado pelo controller.
+- Nenhum dos dois consulta o banco: respondem mesmo com o PostgreSQL fora do ar.
+- `Content-Type`: `text/plain; charset=utf-8` no robots e `application/xml; charset=utf-8` no
+  sitemap.
+- `Cache-Control: public, max-age=3600` nos dois.
+- As URLs absolutas vêm de `Site:BaseUrl` (`appsettings.Production.json`, ou a variável
+  `Site__BaseUrl` no Render, que tem prioridade). Nunca do cabeçalho `Host` da requisição.
+- O `sitemap.xml` lista 7 páginas: Home, Serviços, Sobre, Fórum, Privacidade, Termos e
+  Reembolso. Ficam de fora `Create`, `Acompanhar` e `Sucesso`.
+- O `lastmod` de cada página é a data do último commit que alterou a view correspondente.
+  **Ao editar o conteúdo de uma página, atualize a data em
+  `SeoController.PaginasPublicas`.**
+- O `/health` é um endpoint leve, sem banco, usado pelo `healthCheckPath` do Render e pelo
+  ping externo descrito abaixo.
+
+### Por que o Google dizia "bloqueada pelo robots.txt" (diagnóstico de 27/11/2026)
+
+No plano **Free**, enquanto o Web Service está dormindo (ou sendo implantado), o Render
+responde `/robots.txt` por conta própria, **sem chegar ao site e sem acordá-lo**:
+
+```text
+User-agent: *
+Disallow: /
+```
+
+Medição de 27/11/2026, 19:06 BRT, com User-Agent do Googlebot:
+
+| URL | Status | Content-Type | Tempo | Bytes |
+|---|---|---|---|---|
+| `/robots.txt` (serviço dormindo) | 200 | `text/plain` | 0,85 s | **26** |
+| `/sitemap.xml` (acordou o serviço) | 200 | `text/xml` | **22,55 s** | 832 |
+| `/` (já acordado) | 200 | `text/html` | 2,35 s | 25.370 |
+
+Os 26 bytes são exatamente `User-agent: *` + `Disallow: /` + quebras de linha. Não é o
+conteúdo do repositório. O Google interpreta isso como "site inteiro bloqueado".
+
+O teste do Search Console de 26/11 às 23:15 aconteceu 8 minutos depois do commit `c119efa`
+(23:07), durante a janela de build/deploy. O Google também guarda o `robots.txt` em cache por
+até ~24 h; por isso o aviso pode continuar aparecendo mesmo depois da correção.
+
+**Conclusão:** não era o conteúdo do `robots.txt`. Era o Render respondendo por ele enquanto o
+serviço não estava no ar.
+
+### Manter o serviço acordado (obrigatório no plano Free)
+
+Enquanto o serviço dorme, **nenhuma correção de código resolve o `/robots.txt`**: o Render
+responde antes do seu app. A solução sem custo é manter o serviço acordado com um ping
+externo:
+
+1. Crie uma conta gratuita no [cron-job.org](https://cron-job.org) (ou UptimeRobot).
+2. Crie um monitor com:
+   - URL: `https://anafixtechinformaticasite.onrender.com/health`
+   - Método: `GET`
+   - Intervalo: **10 minutos**
+   - Sucesso esperado: HTTP `200` e corpo `ok`
+3. Ative e confira no painel do Render que o serviço não aparece mais como "spun down".
+
+Não use `/robots.txt` para o ping: o Render responde por ele sem acordar o serviço.
+
+**Custo e risco do plano Free:** cada mês tem **750 horas** de instância Free. Um serviço
+ligado 24 h por dia consome ~744 h em um mês de 31 dias — sobra pouca margem, e deploys
+(instância antiga + nova ao mesmo tempo) consomem um pouco mais. Se as horas acabarem, o
+Render **suspende todos os serviços Free** até o mês seguinte. Se o site for ficar em produção
+de verdade, o plano pago `0.5c-512mb` (US$ 7/mês) elimina a hibernação e este problema.
+
+### Testar antes do deploy
+
+```powershell
+dotnet build AnafixtechInformaticaSite.slnx
+dotnet test AnafixtechInformaticaSite.slnx
+```
+
+Os testes de SEO conferem:
+
+- `robots.txt`: Googlebot, Googlebot-Smartphone e Bingbot podem acessar `/`, `/Services`,
+  `/Home/Sobre`, `/Home/Forum`, `/Home/Privacy`, `/Home/Terms`, `/Home/Refund` e `/sitemap.xml`;
+  as áreas privadas continuam bloqueadas; não existe `Disallow: /`.
+- `sitemap.xml`: todas as URLs respondem 200 sem redirecionamento, sem `noindex` e com
+  `canonical` igual à URL publicada.
+- `Content-Type` de `/robots.txt` e `/sitemap.xml`.
+- `/health` responde sem consultar o banco.
+- O arquivo `google*.html` de verificação continua acessível.
+
+O workflow `.github/workflows/ci.yml` roda isso em todo push/PR. Para barrar o deploy de
+verdade, ative a proteção da branch `master` no GitHub exigindo o check `build-e-testes`.
+
+### Quando o Search Console reclamar
+
+1. Abra o site no navegador para acordá-lo (ou aguarde o ping de 10 min).
+2. Confira no navegador: `/robots.txt` deve mostrar `Allow: /` e a linha `Sitemap:`;
+   `/sitemap.xml` deve listar 7 URLs.
+3. Search Console > **Configurações > Rastreamento > robots.txt**: confira "Buscado" e use
+   **Solicitar nova varredura**.
+4. Search Console > **Sitemaps**: envie `sitemap.xml` (não use Inspeção de URL para o sitemap;
+   ele não é uma página indexável).
+5. Search Console > **Inspeção de URL** na **home**: "Testar URL publicada" e, se estiver OK,
+   "Solicitar indexação".
+6. Acompanhe **Indexação > Páginas** nos próximos dias. A indexação pode levar de dias a
+   semanas, e o cache do `robots.txt` pode segurar o aviso por até ~24 h.
+
+### Se o domínio mudar
+
+Troque `Site:BaseUrl` em `AnafixtechInformaticaSite/appsettings.Production.json` (ou defina
+`Site__BaseUrl` no Render). O `robots.txt`, o `sitemap.xml` e os links canônicos passam a usar
+o endereço novo sem precisar editar mais nada.

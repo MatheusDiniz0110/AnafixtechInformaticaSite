@@ -12,7 +12,9 @@ services:
     region: virginia
     dockerfilePath: ./AnafixtechInformaticaSite/Dockerfile
     dockerContext: .
-    healthCheckPath: /
+    # /health é leve e não consulta o banco. O Render só troca a versão antiga pela nova
+    # quando este caminho responder 200, então o deploy não derruba o site no meio.
+    healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
       - key: ASPNETCORE_ENVIRONMENT
